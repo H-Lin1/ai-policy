@@ -1,0 +1,39 @@
+schema: spec-driven
+
+context: |
+  This is the AI Policy Service Platform V1.0, a Shenzhen-only project-closure demonstration.
+  Stack: React + Vite + TypeScript frontend; FastAPI + Pydantic + SQLAlchemy 2 + Alembic backend;
+  Supabase Auth/PostgreSQL/Storage. Use a modular monolith and version all APIs under /api/v1.
+  Frontend never writes app.* business tables directly. Supabase Auth establishes identity; FastAPI owns
+  business authorization, organization/region scope, validation, and errors.
+
+  Legacy code is outside this repository boundary. The only future code migration candidate is the verified
+  pure classification computation from backend/app0723.py, wrapped by DepartmentClassifier. Never copy
+  old Flask routes, payloads, global state, search/RAG/FAISS/Embedding code, mock data, startup code, or frontend
+  application source. A separately approved visual-baseline change may independently reimplement observed public
+  visual language and localize explicitly authorized public static brand assets with documented provenance; it
+  must not copy legacy JavaScript, CSS, components, source maps, routes, state, payloads, or business behavior.
+  Real service failures must never silently fall back to Mock data. AI/model errors must be explicit.
+
+  Before each task, read DEVELOPMENT_STATUS.md. Follow its default single-developer sequence unless the
+  user explicitly authorizes parallel work. A new functional change requires PRD or technical plan,
+  proposal, specs, design, tasks, strict validation, implementation, evidence, and archive.
+
+rules:
+  proposal:
+    - Reference the related PRD or TECH ID and the development-status step.
+    - State non-goals and legacy-code boundaries when relevant.
+  design:
+    - State API, data, permission, model/Mock, failure, migration, and rollback decisions that apply.
+    - Do not create business tables or routes outside the approved change scope.
+  tasks:
+    - Keep tasks ordered as migration/data, backend, frontend, model/data import, verification, documentation.
+    - Include an explicit test/evidence task and a DEVELOPMENT_STATUS.md update task.
+operations:
+  apply:
+    guidance:
+      - Check DEVELOPMENT_STATUS.md and strict validation before implementation.
+      - Preserve the API error envelope and request ID behavior.
+  archive:
+    guidance:
+      - Archive only after all tasks, tests, and acceptance evidence are recorded in DEVELOPMENT_STATUS.md.

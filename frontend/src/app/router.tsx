@@ -1,0 +1,49 @@
+import { createBrowserRouter } from 'react-router-dom'
+
+import { AppLayout } from './AppLayout'
+import { HealthPage } from './pages/HealthPage'
+import { LoginPage } from './pages/LoginPage'
+import { PolicyWorkspacePage } from './pages/PolicyWorkspacePage'
+import { HistoricalQaWorkspacePage } from './pages/HistoricalQaWorkspacePage'
+import { ClassificationWorkspacePage } from './pages/ClassificationWorkspacePage'
+import { RoleWorkspacePage } from './pages/RoleWorkspacePage'
+import { WorkspaceHomePage } from './pages/WorkspaceHomePage'
+import { ConsultationWorkspacePage } from './pages/ConsultationWorkspacePage'
+import { EnterpriseProfilePage } from './pages/EnterpriseProfilePage'
+import { authenticatedHomePath, roleWorkspacePath } from './roleRoutes'
+
+function NotFoundPage() {
+  return (
+    <section className="page-content empty-state">
+      <div className="eyebrow">404</div>
+      <h1>页面不存在</h1>
+      <p>请从顶部导航返回工作区。</p>
+    </section>
+  )
+}
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      { index: true, element: <WorkspaceHomePage /> },
+      { path: authenticatedHomePath.slice(1), element: <WorkspaceHomePage /> },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'health', element: <HealthPage /> },
+      { path: 'policies', element: <PolicyWorkspacePage /> },
+      { path: 'policies/:policyId', element: <PolicyWorkspacePage /> },
+      { path: 'qa', element: <HistoricalQaWorkspacePage /> },
+      { path: 'qa/:qaId', element: <HistoricalQaWorkspacePage /> },
+      { path: 'classify', element: <ClassificationWorkspacePage /> },
+      { path: 'consultations', element: <ConsultationWorkspacePage /> },
+      { path: 'consultations/new', element: <ConsultationWorkspacePage /> },
+      { path: 'my-enterprise', element: <EnterpriseProfilePage /> },
+      { path: roleWorkspacePath('individual').slice(1), element: <RoleWorkspacePage role="individual" /> },
+      { path: roleWorkspacePath('enterprise').slice(1), element: <RoleWorkspacePage role="enterprise" /> },
+      { path: roleWorkspacePath('government').slice(1), element: <RoleWorkspacePage role="government" /> },
+      { path: roleWorkspacePath('admin').slice(1), element: <RoleWorkspacePage role="admin" /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+])

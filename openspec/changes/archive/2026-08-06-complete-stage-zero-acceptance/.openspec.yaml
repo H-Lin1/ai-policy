@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-06
+goal: Make stage 0 operations reproducible and fail-closed without unapproved
+  migrations or destructive resets.

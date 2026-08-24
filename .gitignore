@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.venv-*/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+SUPABASE_SZ_GOV_TEST_ACCOUNTS.md
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.npm-cache/
+
+# Local runtime artifacts
+backend/.coverage
+backend/htmlcov/
+backend/.alembic/
+backend/*.egg-info/
+*.log
+.DS_Store
+
+# Local Codex workspace instructions and caches
+.codex/
+
+# Model and index artifacts (never commit local weights)
+models/
+indexes/
+*.pth
+*.pt
+*.safetensors

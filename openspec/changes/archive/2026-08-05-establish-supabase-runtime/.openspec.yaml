@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-05
+goal: Complete S0.2 with a real database migration and current Supabase
+  signing-key validation.

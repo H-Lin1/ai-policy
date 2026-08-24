@@ -1,0 +1,12 @@
+{
+  "name": "ai-policy-platform",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "sh scripts/dev.sh",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": ".venv/bin/python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload",
+    "test": "npm --prefix frontend test",
+    "build": "npm --prefix frontend run build"
+  }
+}
