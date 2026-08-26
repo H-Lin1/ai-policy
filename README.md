@@ -9,9 +9,130 @@
 - 前端：React + Vite + TypeScript
 - 后端：FastAPI + Pydantic + SQLAlchemy + Alembic
 - 数据平台：Supabase/PostgreSQL；开发环境未配置时允许降级启动，真实业务开发使用已配置的 Supabase
-- 旧代码边界：只有经验证的旧 `classify` 计算逻辑未来可以进入 `DepartmentClassifier`；本阶段尚未迁移任何旧模型代码。
+- 分类能力：深圳部门分类已接入经验证的本地 TCN/BERT 模型资产；模型权重不提交到 Git，需要由仓库 owner 单独提供。
 
 开发顺序和跨对话恢复规则见 [`DEVELOPMENT_STATUS.md`](./DEVELOPMENT_STATUS.md)。当前 B1.8 的范围、问题台账和阶段验收依据见 [`PRD-V1-B1-08`](./docs/PRD-V1-B1-08.md)。
+
+## 部署指南
+
+本节面向第一次从 GitHub 获取项目的协作者。按下面步骤完成后，可在本机启动前端和后端，并使用已授权的测试账号登录、访问政策中心、历史问答、政民互动和部门分类等现有功能。
+
+### 1. 前置环境
+
+- Git
+- Python 3.11 或更高版本
+- Node.js 20 或更高版本及 npm 10 或更高版本
+- 至少约 3 GB 可用磁盘空间：模型压缩包约 868 MB，解压后的 `backend/models/` 约 868 MB，安装 Python/Node 依赖还会占用额外空间。
+
+macOS 可先确认版本：
+
+```bash
+git --version
+python3 --version
+node --version
+npm --version
+```
+
+### 2. 从 GitHub 获取代码
+
+```bash
+git clone https://github.com/H-Lin1/ai-policy.git
+cd ai-policy
+```
+
+仓库不会包含 `.env`、`frontend/.env.local`、`backend/models/`，也不会包含测试账号密码或数据库凭据；这些文件被有意排除在 Git 之外。
+
+### 3. 向仓库 owner 索要的文件和信息
+
+在安装或启动前，请通过安全渠道向仓库 owner 索要下列内容；不要通过 Git commit、Issue、聊天记录截图或公开网盘泄露它们。
+
+| 需要内容 | 用途与放置位置 |
+| --- | --- |
+| 后端环境配置值 | 按 [`.env.example`](./.env.example) 创建项目根目录 `.env`，由 owner 提供 `SUPABASE_URL`、`DATABASE_URL` 和 JWT 相关配置。这些值用于后端鉴权和访问既有 Supabase/PostgreSQL 数据。 |
+| 前端环境配置值 | 按 [`frontend/.env.example`](./frontend/.env.example) 创建 `frontend/.env.local`，由 owner 提供 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_ANON_KEY`。只可填写匿名键，绝不可填写 Supabase service-role key。 |
+| `ai-policy-backend-models-YYYYMMDD.zip` | 模型压缩包由 owner 单独发送。解压后必须得到 `backend/models/`，其中包含 `hfl_chinese_bert_wwm/` 与 `sz/` 两个目录。 |
+| 可登录的测试账号 | 个人、企业或政府入口所需的账号和密码。账号必须已由 owner 授权并存在于共享 Supabase 项目中；没有账号时仍可打开公开首页，但无法验证登录后的业务功能。 |
+
+如果只需要查看公开首页或进行纯前端界面开发，可暂不索要模型和测试账号；但要完整运行登录、业务列表、互动和分类功能，以上内容均需要可用。
+
+`IAM_DEMO_*_USER_ID` 仅供 owner 在初始化身份映射时使用；普通协作者连接已经初始化的共享环境时应保持为空，不需要索要或填写。
+
+### 4. 放置模型并创建环境文件
+
+将 owner 提供的模型压缩包保存到任意临时位置，然后在项目根目录执行（把路径替换成实际文件位置）：
+
+```bash
+unzip /实际路径/ai-policy-backend-models-YYYYMMDD.zip -d backend
+```
+
+解压后的目录必须是：
+
+```text
+backend/models/
+├── hfl_chinese_bert_wwm/
+└── sz/
+```
+
+接着创建环境文件：
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env.local
+```
+
+将 owner 给出的值填入对应文件。启用本地部门分类时，项目根 `.env` 至少需要以下四项（路径相对于项目根目录）：
+
+```dotenv
+CLASSIFIER_MODEL_PATH=backend/models/sz/szTCN变为2个一维卷积3best.model.pth
+CLASSIFIER_TOKENIZER_PATH=backend/models/hfl_chinese_bert_wwm
+CLASSIFIER_LABEL_BINDINGS_PATH=backend/models/sz/department_label_bindings.json
+CLASSIFIER_DEPARTMENT_EMBEDDINGS_PATH=backend/models/sz/10000szdepartment_embeddings.pth
+```
+
+不要执行 README 中的数据库迁移、初始化、导入或 reset 命令，除非 owner 已明确授权并说明目标环境；普通协作者连接现有共享环境时不需要这些写操作。
+
+### 5. 安装依赖并启动
+
+在项目根目录执行：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e 'backend[dev]'
+npm --prefix frontend ci
+npm run dev
+```
+
+`npm run dev` 会同时启动：
+
+- 前端：`http://127.0.0.1:5173/`
+- 后端：`http://127.0.0.1:8000/`
+- 后端 API 文档：`http://127.0.0.1:8000/docs`
+
+保持该终端运行；按 `Ctrl+C` 会同时停止前后端。若 `5173` 或 `8000` 已被其他程序占用，先停止占用进程，或改用：
+
+```bash
+FRONTEND_PORT=5175 BACKEND_PORT=8001 npm run dev
+```
+
+使用自定义端口时，还要把项目根 `.env` 中的 `CORS_ORIGINS` 增加为实际前端地址，例如 `http://127.0.0.1:5175`；前端启动脚本会自动指向对应的后端端口。
+
+### 6. 启动后检查
+
+浏览器打开 `http://127.0.0.1:5173/`，应看到无导航栏的“政通惠”公开首页和个人、企业、政府三个入口。再检查以下地址：
+
+```text
+http://127.0.0.1:8000/api/v1/health/live
+http://127.0.0.1:8000/api/v1/health/ready
+http://127.0.0.1:8000/api/v1/ai/readiness
+```
+
+- `health/live` 返回 `ok` 表示后端进程已启动。
+- 已正确提供 Supabase 与数据库配置时，`health/ready` 应显示数据库和认证已就绪。
+- 模型已正确解压且四个 `CLASSIFIER_*` 路径均正确时，`ai/readiness` 应显示模型 `ready`。
+
+然后从与账号角色匹配的入口登录：个人账号选“个人服务”、企业账号选“企业服务”、政府账号选“政府服务”。入口与账号角色不一致时，系统会阻止自动跳转并提示进入正确服务或切换账号。
 
 ## 运行时行为
 
@@ -19,8 +140,8 @@
 - 请求追踪：合法的 `X-Request-ID` 原样保留，否则自动生成；成功、失败和 CORS 预检响应都带该响应头，且与错误体中的 `request_id` 一致。请求期间任何应用 logger 的记录都会带上同一个请求 ID。
 - 健康检查：`/api/v1/health/live` 只回答进程与路由是否可用，不访问数据库、JWKS 或模型；`/api/v1/health/ready` 报告依赖状态和生效的功能开关快照。三个健康接口都返回 `Cache-Control: no-store`。
 - 功能开关：由后端集中管理，通过 `GET /api/v1/system/features` 暴露环境名、是否需要认证和布尔快照，不返回任何配置值。未注册的开关名按关闭处理；`ENABLE_MOCKS` 在生产环境强制关闭，并在就绪检查中标记为不合规配置。
-- 前端路由守卫：受开关控制的路由（阶段 0 为 `/policies`）在开关关闭、快照加载中或后端不可达时都不渲染业务内容，也不显示占位假数据。
-- 分类适配器：`CLASSIFIER_SUPPORTED_REGIONS` 默认只注册 `sz`；输入在适配器边界规范化，未知地区返回 `REGION_NOT_SUPPORTED`，未验证模型和无效资产返回明确 not-ready reason，不跨地区回退、不返回 Mock 分类。`/api/v1/ai/readiness` 为 `no-store` 安全探针。
+- 前端访问控制：登录后首页为 `/homepage`，公开首页固定为 `/`；个人、企业、政府的入口意图不会授予权限，实际角色始终由后端 `/me` 确认。角色不匹配时不会静默进入其他工作区。
+- 分类适配器：深圳分类服务使用本地 TCN/BERT 模型，需配置四项 `CLASSIFIER_*_PATH` 并放置 owner 提供的模型资产；`CLASSIFIER_SUPPORTED_REGIONS` 默认只注册 `sz`。输入在适配器边界规范化，未知地区返回 `REGION_NOT_SUPPORTED`，资产缺失或无效返回明确 not-ready reason，不跨地区回退、不返回 Mock 分类。`/api/v1/ai/readiness` 为 `no-store` 安全探针。
 - 身份与权限：Supabase JWT 只证明登录主体；`/api/v1/me` 和 `/api/v1/iam/workspaces/{role}` 从 `app.profiles/user_roles/roles/regions/organizations` 读取业务角色与深圳范围。JWT 角色声明和前端状态都不能授予权限；未配置、停用、无角色或跨角色访问明确返回 403/503，不回退 Mock。
 
 ## 运行环境
@@ -31,21 +152,9 @@
 
 ## 快速启动
 
-在项目根目录执行：
+完整的首次部署、owner 交付物、模型解压和启动后验证，请使用上方[部署指南](#部署指南)。已经拿到 `.env`、`frontend/.env.local` 和模型、且已安装依赖的协作者，可在项目根目录直接执行：
 
 ```bash
-cp .env.example .env
-# 先确认这里输出 3.11 或更高版本；否则请先安装/选择新版 Python
-python3 --version
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e 'backend[dev]'
-
-cd frontend
-cp .env.example .env.local
-npm install
-# 在 .env.local 配置公开的 VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
-cd ..
 npm run dev
 ```
 
@@ -59,11 +168,11 @@ FRONTEND_PORT=5175 BACKEND_PORT=8001 npm run dev
 
 浏览器访问：
 
-- 前端：`http://localhost:5173`
-- OpenAPI：`http://localhost:8000/docs`
-- 存活检查：`http://localhost:8000/api/v1/health/live`
-- 就绪检查：`http://localhost:8000/api/v1/health/ready`
-- 功能开关：`http://localhost:8000/api/v1/system/features`
+- 前端：`http://127.0.0.1:5173/`
+- OpenAPI：`http://127.0.0.1:8000/docs`
+- 存活检查：`http://127.0.0.1:8000/api/v1/health/live`
+- 就绪检查：`http://127.0.0.1:8000/api/v1/health/ready`
+- 模型检查：`http://127.0.0.1:8000/api/v1/ai/readiness`
 
 ## 初始化与数据库迁移
 
