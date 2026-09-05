@@ -54,7 +54,7 @@ export function LoginPage() {
   const { state, signIn, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [switchingAccount, setSwitchingAccount] = useState(false)
@@ -71,7 +71,7 @@ export function LoginPage() {
         switchingAccount={switchingAccount}
         onEnterActualService={() => navigate(decision.destination, { replace: true })}
         onSwitchAccount={() => {
-          setEmail('')
+          setUsername('')
           setPassword('')
           setError(null)
           setSwitchingAccount(true)
@@ -86,7 +86,7 @@ export function LoginPage() {
     setBusy(true)
     setError(null)
     try {
-      setError(await signIn(email.trim(), password))
+      setError(await signIn(username.trim(), password))
     } finally {
       setBusy(false)
     }
@@ -107,13 +107,13 @@ export function LoginPage() {
             <h2>账号登录</h2>
           </div>
           <label>
-            <span>邮箱</span>
+            <span>账号</span>
             <input
-              type="email"
+              type="text"
               autoComplete="username"
-              placeholder="请输入邮箱"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              placeholder="请输入账号"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               required
               disabled={busy || unavailable}
             />

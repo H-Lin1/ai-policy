@@ -13,10 +13,10 @@ import {
   type RoleCode,
   type WorkspaceResponse,
 } from '../../lib/api/client'
-import { supabase, supabaseAuthConfigured } from './supabase'
 import {
   AuthSessionCoordinator,
   type AuthGateway,
+  type AuthSession,
   type AuthState,
 } from './AuthSessionCoordinator'
 
@@ -25,7 +25,7 @@ export type { AuthState } from './AuthSessionCoordinator'
 export interface AuthContextValue {
   state: AuthState
   hasSession: boolean
-  signIn: (email: string, password: string) => Promise<string | null>
+  signIn: (username: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
   retry: () => void
   authorizeRole: (role: RoleCode) => Promise<WorkspaceResponse>
@@ -34,17 +34,39 @@ export interface AuthContextValue {
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-function createAuthGateway(): AuthGateway | null {
-  const client = supabase
-  if (!supabaseAuthConfigured || !client) return null
+const AUTH_STORAGE_KEY = 'ai-policy-local-auth'
+
+function readStoredSession(): AuthSession | null {
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { access_token?: unknown }
+    return typeof parsed.access_token === 'string' && parsed.access_token
+      ? { access_token: parsed.access_token }
+      : null
+  } catch {
+    return null
+  }
+}
+
+function createAuthGateway(): AuthGateway {
   return {
-    getSession: () => client.auth.getSession(),
-    onAuthStateChange: (callback) => {
-      const { data } = client.auth.onAuthStateChange((_event, session) => callback(session))
-      return () => data.subscription.unsubscribe()
+    getSession: async () => ({ data: { session: readStoredSession() }, error: null }),
+    onAuthStateChange: () => () => undefined,
+    signInWithPassword: async ({ username, password }) => {
+      try {
+        const data = await apiClient.login(username, password)
+        const session: AuthSession = { access_token: data.access_token }
+        window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+        return { data: { session }, error: null }
+      } catch (error) {
+        return { data: { session: null }, error }
+      }
     },
-    signInWithPassword: (credentials) => client.auth.signInWithPassword(credentials),
-    signOut: () => client.auth.signOut(),
+    signOut: async () => {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY)
+      return { error: null }
+    },
   }
 }
 
@@ -70,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [coordinator])
 
   const signIn = useCallback(
-    (email: string, password: string) => coordinator.signIn(email, password),
+    (username: string, password: string) => coordinator.signIn(username, password),
     [coordinator],
   )
   const signOut = useCallback(() => coordinator.signOut(), [coordinator])

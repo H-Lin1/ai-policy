@@ -4,6 +4,8 @@ Revision ID: 0005_consultation_workflow
 Revises: 0004_historical_qa
 """
 
+import os
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -64,10 +66,12 @@ def upgrade() -> None:
         sa.CheckConstraint("event_type IN ('submitted', 'assigned', 'replied', 'published', 'closed')", name="ck_consultation_events_type"), schema="app",
     )
     op.create_index("ix_consultation_events_consultation_created", "consultation_events", ["consultation_id", "created_at"], schema="app")
+    standalone_mode = os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
     for table in ("consultation_departments", "consultations", "consultation_events"):
         op.execute(f"ALTER TABLE app.{table} ENABLE ROW LEVEL SECURITY")
-        op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM anon")
-        op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM authenticated")
+        if not standalone_mode:
+            op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM anon")
+            op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM authenticated")
 
 
 def downgrade() -> None:

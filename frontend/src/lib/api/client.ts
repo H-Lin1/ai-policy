@@ -53,6 +53,12 @@ export interface MeResponse {
   development_bypass: boolean
 }
 
+export interface LocalLoginResponse {
+  access_token: string
+  token_type: 'bearer'
+  expires_in: number
+}
+
 export interface WorkspaceResponse {
   role: RoleCode
   title: string
@@ -200,7 +206,7 @@ export class ApiError extends Error {
   }
 }
 
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
 const baseUrl = configuredBaseUrl.replace(/\/$/, '')
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -240,6 +246,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
+  login: (username: string, password: string) =>
+    request<LocalLoginResponse>('/iam/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    }),
   getHealth: () => request<HealthResponse>('/health'),
   getLive: () => request<HealthResponse>('/health/live'),
   getReady: () => request<HealthResponse>('/health/ready'),

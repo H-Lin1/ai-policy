@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Path, Response
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.api.contracts import (
     AUTH_ERROR_RESPONSES,
@@ -8,13 +10,43 @@ from app.api.contracts import (
     IDENTITY_ERROR_RESPONSES,
 )
 from app.core.errors import AppError
+from app.core.config import Settings, get_settings
+from app.core.database import request_db_session
+from app.core.local_auth import issue_token, verify_password
 
-from .schemas import RoleCode, WorkspaceResponse
+from .models import User
+from .schemas import LocalLoginRequest, LocalLoginResponse, RoleCode, WorkspaceResponse
 from .service import IdentityContext, get_current_identity, role_title
 
 NO_STORE = "no-store"
 
 router = APIRouter(prefix="/iam", tags=["identity-access"])
+
+
+@router.post(
+    "/login",
+    response_model=LocalLoginResponse,
+    summary="本地账号登录",
+    operation_id="localLogin",
+    responses=COMMON_ERROR_RESPONSES,
+)
+def local_login(
+    payload: LocalLoginRequest,
+    response: Response,
+    settings: Settings = Depends(get_settings),
+    session: Session | None = Depends(request_db_session),
+) -> LocalLoginResponse:
+    response.headers["Cache-Control"] = NO_STORE
+    if settings.auth_mode != "local":
+        raise AppError("ROUTE_NOT_FOUND", "请求的接口不存在", status_code=404)
+    if session is None:
+        raise AppError("IDENTITY_STORE_UNAVAILABLE", "应用身份服务暂不可用", status_code=503)
+    username = payload.username.strip()
+    account = session.execute(select(User).where(User.username == username)).scalar_one_or_none()
+    if account is None or not account.is_active or not verify_password(payload.password, account.password_hash):
+        raise AppError("AUTH_INVALID", "账号或密码错误", status_code=401)
+    token, expires_in = issue_token(user_id=account.id, username=account.username, settings=settings)
+    return LocalLoginResponse(access_token=token, expires_in=expires_in)
 
 
 @router.get(

@@ -128,6 +128,22 @@ class Organization(Base):
     region: Mapped[Region] = relationship()
 
 
+class User(Base):
+    """Standalone application account used when Supabase Auth is disabled."""
+
+    __tablename__ = "users"
+    __table_args__ = {"schema": "app"}
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    username: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(320))
+    display_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
+
+
 class Profile(Base):
     __tablename__ = "profiles"
     __table_args__ = (
@@ -139,8 +155,6 @@ class Profile(Base):
         {"schema": "app"},
     )
 
-    # Supabase owns auth.users; migration 0002 carries that cross-schema FK so
-    # SQLAlchemy never has to resolve the managed table in application metadata.
     user_id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True), primary_key=True
     )

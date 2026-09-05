@@ -24,6 +24,7 @@ export function RoleGuardView({
   retryAuthorization,
   children,
 }: RoleGuardViewProps) {
+  const appBasePath = (import.meta.env.VITE_APP_BASE_PATH ?? '/').replace(/\/+$/, '')
   if (authState.status === 'configuration_missing') {
     return <AccessState title="登录服务未配置" message={authState.message} />
   }
@@ -33,7 +34,7 @@ export function RoleGuardView({
   if (authState.status === 'signed_out') {
     return (
       <AccessState title="需要登录" message="登录后可进入已授权的工作区。">
-        <a className="button button-primary" href="/login">登录</a>
+        <a className="button button-primary" href={`${appBasePath || ''}/login`}>登录</a>
       </AccessState>
     )
   }

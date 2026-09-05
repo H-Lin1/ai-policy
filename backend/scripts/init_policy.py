@@ -23,6 +23,7 @@ APPLY_POLICY_FIXTURE = "--apply-policy-fixture"
 CONFIRM = "--confirm"
 PREVIOUS_REVISION = "0002_identity_access"
 POLICY_REVISION = "0003_policy_library"
+CURRENT_REVISION = "0005_consultation_workflow"
 POLICY_IMPORT_LOCK_ID = 11_000_003
 FIXTURE_SIZE = 20
 FIXTURE_NAMESPACE = UUID("c4ddc1a9-1f6a-4d0b-b0c1-0f8eaf6b1f20")
@@ -66,6 +67,8 @@ def database_target_state(settings: Settings) -> str:
         return "not_configured"
     if not database_url.lower().startswith("postgresql+psycopg://"):
         return "unsupported_database_target"
+    if settings.database_mode == "standalone":
+        return "postgresql_configured"
     binding_state = supabase_target_binding_state(settings)
     return "postgresql_configured" if binding_state == "ok" else binding_state
 
@@ -94,7 +97,7 @@ def _current_revision(settings: Settings) -> tuple[str | None, str]:
 
 
 def apply_policy_migration(settings: Settings) -> tuple[bool, str]:
-    if supabase_target_binding_state(settings) != "ok":
+    if settings.database_mode != "standalone" and supabase_target_binding_state(settings) != "ok":
         return False, "target_not_verified"
     revision, state = _current_revision(settings)
     if state != "ok":
@@ -233,7 +236,12 @@ def _import_plan(
     revisions = tuple(
         connection.execute(text("SELECT version_num FROM alembic_version FOR SHARE")).scalars()
     )
-    if revisions != (POLICY_REVISION,):
+    allowed_revisions = (
+        (POLICY_REVISION, CURRENT_REVISION)
+        if os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
+        else (POLICY_REVISION,)
+    )
+    if revisions not in ((revision,) for revision in allowed_revisions):
         return "revision_mismatch", None
     schema_state = _schema_state(connection)
     if schema_state != "ok":
@@ -294,7 +302,7 @@ def apply_policy_fixture(
     settings: Settings,
     fixture: Sequence[Mapping[str, object]],
 ) -> ImportResult:
-    if supabase_target_binding_state(settings) != "ok":
+    if settings.database_mode != "standalone" and supabase_target_binding_state(settings) != "ok":
         return ImportResult(False, "target_not_verified")
     try:
         engine = database_engine(settings)

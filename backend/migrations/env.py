@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -15,9 +16,13 @@ if config.config_file_name is not None:
 settings = get_settings()
 if not settings.normalized_database_url:
     raise RuntimeError("DATABASE_URL is required to run Alembic migrations")
-target_binding_state = supabase_target_binding_state(settings)
-if target_binding_state != "ok":
-    raise RuntimeError(f"Supabase target binding check failed ({target_binding_state})")
+if settings.database_mode == "supabase":
+    target_binding_state = supabase_target_binding_state(settings)
+    if target_binding_state != "ok":
+        raise RuntimeError(f"Supabase target binding check failed ({target_binding_state})")
+# Revision files must use the same validated mode as Settings.  This matters
+# when DATABASE_MODE is loaded from .env rather than inherited by the process.
+os.environ["DATABASE_MODE"] = settings.database_mode
 config.set_main_option("sqlalchemy.url", settings.normalized_database_url.replace("%", "%%"))
 target_metadata = None
 

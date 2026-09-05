@@ -4,6 +4,8 @@ Revision ID: 0004_historical_qa
 Revises: 0003_policy_library
 """
 
+import os
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -16,6 +18,10 @@ depends_on = None
 
 def _postgresql_only() -> bool:
     return op.get_bind().dialect.name == "postgresql"
+
+
+def _standalone_mode() -> bool:
+    return os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
 
 
 def upgrade() -> None:
@@ -56,8 +62,9 @@ def upgrade() -> None:
     op.create_index("ix_historical_qa_region_replied", "historical_qa", ["region_code", "replied_at"], schema="app")
     op.create_index("ix_historical_qa_topic", "historical_qa", ["topic"], schema="app")
     op.execute("ALTER TABLE app.historical_qa ENABLE ROW LEVEL SECURITY")
-    op.execute("REVOKE ALL PRIVILEGES ON TABLE app.historical_qa FROM anon")
-    op.execute("REVOKE ALL PRIVILEGES ON TABLE app.historical_qa FROM authenticated")
+    if not _standalone_mode():
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE app.historical_qa FROM anon")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE app.historical_qa FROM authenticated")
 
 
 def downgrade() -> None:

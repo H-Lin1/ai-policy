@@ -43,3 +43,14 @@ class WorkspaceResponse(BaseModel):
     subject: str
     region: RegionSummary | None = None
     organization: OrganizationSummary | None = None
+
+
+class LocalLoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class LocalLoginResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int

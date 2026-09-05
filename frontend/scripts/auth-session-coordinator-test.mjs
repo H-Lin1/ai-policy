@@ -183,7 +183,7 @@ try {
       () => coordinator.getSnapshot().state.status === 'ready',
       'sign in should resolve identity',
     )
-    assert.deepEqual(credentials, [{ email: 'demo@example.com', password: 'secret' }])
+    assert.deepEqual(credentials, [{ username: 'demo@example.com', password: 'secret' }])
     assert.deepEqual(meTokens, ['sign-in-token'], 'SIGNED_IN event and response must not duplicate /me')
 
     const signOutPromise = coordinator.signOut()

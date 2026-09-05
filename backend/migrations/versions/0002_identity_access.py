@@ -4,6 +4,8 @@ Revision ID: 0002_identity_access
 Revises: 0001_foundation_schema
 """
 
+import os
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -19,6 +21,10 @@ ORGANIZATION_TYPES = ("platform", "government", "enterprise")
 
 def _postgresql_only() -> bool:
     return op.get_bind().dialect.name == "postgresql"
+
+
+def _standalone_mode() -> bool:
+    return os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
 
 
 def upgrade() -> None:
@@ -53,6 +59,21 @@ def upgrade() -> None:
         ),
         schema="app",
     )
+
+    if _standalone_mode():
+        op.create_table(
+            "users",
+            sa.Column("id", uuid_type, primary_key=True),
+            sa.Column("username", sa.String(length=128), nullable=False),
+            sa.Column("password_hash", sa.String(length=255), nullable=False),
+            sa.Column("email", sa.String(length=320), nullable=True),
+            sa.Column("display_name", sa.String(length=160), nullable=False),
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
+            sa.Column("created_at", timestamp_type, nullable=False, server_default=sa.text("now()")),
+            sa.Column("updated_at", timestamp_type, nullable=False, server_default=sa.text("now()")),
+            sa.UniqueConstraint("username", name="uq_users_username"),
+            schema="app",
+        )
 
     op.create_table(
         "roles",
@@ -122,7 +143,11 @@ def upgrade() -> None:
         sa.Column("is_demo", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("created_at", timestamp_type, nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", timestamp_type, nullable=False, server_default=sa.text("now()")),
-        sa.ForeignKeyConstraint(["user_id"], ["auth.users.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["app.users.id" if _standalone_mode() else "auth.users.id"],
+            ondelete="RESTRICT",
+        ),
         sa.ForeignKeyConstraint(["region_id"], ["app.regions.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(
             ["organization_id"], ["app.organizations.id"], ondelete="RESTRICT"
@@ -149,8 +174,11 @@ def upgrade() -> None:
 
     for table in ("regions", "roles", "organizations", "profiles", "user_roles"):
         op.execute(f"ALTER TABLE app.{table} ENABLE ROW LEVEL SECURITY")
-        op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM anon")
-        op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM authenticated")
+        if not _standalone_mode():
+            op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM anon")
+            op.execute(f"REVOKE ALL PRIVILEGES ON TABLE app.{table} FROM authenticated")
+    if _standalone_mode():
+        op.execute("ALTER TABLE app.users ENABLE ROW LEVEL SECURITY")
 
 
 def downgrade() -> None:
@@ -158,3 +186,5 @@ def downgrade() -> None:
         return
     for table in ("user_roles", "profiles", "organizations", "roles", "regions"):
         op.drop_table(table, schema="app")
+    if _standalone_mode():
+        op.drop_table("users", schema="app")

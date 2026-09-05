@@ -28,12 +28,21 @@ class Settings(BaseSettings):
     port: int = 8000
 
     auth_required: bool = True
+    auth_mode: Literal["supabase", "local"] = "supabase"
+    local_auth_jwt_secret: str | None = None
+    local_auth_jwt_issuer: str = "ai-policy-local"
+    local_auth_jwt_audience: str = "aipolicy-api"
+    local_auth_token_ttl_seconds: int = Field(default=28800, ge=300, le=86400)
     supabase_url: str | None = None
     supabase_jwks_url: str | None = None
     supabase_jwt_issuer: str | None = None
     supabase_jwt_audience: str = "authenticated"
     supabase_jwt_leeway_seconds: int = Field(default=30, ge=0, le=300)
     database_url: str | None = None
+    # Keep Supabase as the default for the existing deployment.  The local
+    # PostgreSQL exploration uses an explicit standalone mode so migrations
+    # can be tested without pretending that a local database is Supabase.
+    database_mode: Literal["supabase", "standalone"] = "supabase"
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     allow_cors_wildcard: bool = False
@@ -148,6 +157,8 @@ class Settings(BaseSettings):
     def auth_configuration_status(self) -> str:
         if not self.auth_required:
             return "invalid_production_bypass" if self.is_production else "development_bypass"
+        if self.auth_mode == "local":
+            return "configured" if self.local_auth_jwt_secret and len(self.local_auth_jwt_secret) >= 32 else "not_configured"
         if (
             self.resolved_supabase_jwks_url
             and self.resolved_supabase_jwt_issuer

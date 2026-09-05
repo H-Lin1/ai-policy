@@ -22,6 +22,9 @@ function NotFoundPage() {
   )
 }
 
+const configuredBasePath = import.meta.env.VITE_APP_BASE_PATH?.trim() || '/'
+const basename = configuredBasePath === '/' ? undefined : configuredBasePath.replace(/\/+$/, '')
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -46,4 +49,4 @@ export const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
-])
+], basename ? { basename } : undefined)

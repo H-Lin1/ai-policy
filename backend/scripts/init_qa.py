@@ -23,6 +23,7 @@ APPLY_QA_FIXTURE = "--apply-qa-fixture"
 CONFIRM = "--confirm"
 PREVIOUS_REVISION = "0003_policy_library"
 QA_REVISION = "0004_historical_qa"
+CURRENT_REVISION = "0005_consultation_workflow"
 QA_IMPORT_LOCK_ID = 11_000_004
 FIXTURE_SIZE = 20
 FIXTURE_NAMESPACE = UUID("a1429f7d-7c96-48cd-a6e4-4b8d29d3a546")
@@ -51,6 +52,8 @@ def database_target_state(settings: Settings) -> str:
         return "not_configured"
     if not settings.normalized_database_url.lower().startswith("postgresql+psycopg://"):
         return "unsupported_database_target"
+    if settings.database_mode == "standalone":
+        return "postgresql_configured"
     state = supabase_target_binding_state(settings)
     return "postgresql_configured" if state == "ok" else state
 
@@ -68,7 +71,7 @@ def _current_revision(settings: Settings) -> tuple[str | None, str]:
 
 
 def apply_qa_migration(settings: Settings) -> tuple[bool, str]:
-    if supabase_target_binding_state(settings) != "ok":
+    if settings.database_mode != "standalone" and supabase_target_binding_state(settings) != "ok":
         return False, "target_not_verified"
     revision, state = _current_revision(settings)
     if state != "ok":
@@ -139,7 +142,9 @@ def _schema_state(connection) -> str:
 
 
 def _import_plan(connection, fixture: Sequence[Mapping[str, object]]) -> tuple[str, tuple[dict[str, object], ...] | None]:
-    if tuple(connection.execute(text("SELECT version_num FROM alembic_version FOR SHARE")).scalars()) != (QA_REVISION,): return "revision_mismatch", None
+    revisions = tuple(connection.execute(text("SELECT version_num FROM alembic_version FOR SHARE")).scalars())
+    allowed_revisions = (QA_REVISION, CURRENT_REVISION) if os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone" else (QA_REVISION,)
+    if revisions not in ((revision,) for revision in allowed_revisions): return "revision_mismatch", None
     state = _schema_state(connection)
     if state != "ok": return state, None
     regions = tuple(connection.execute(select(Region.__table__).where(Region.__table__.c.code == "sz", Region.__table__.c.is_active.is_(True)).with_for_update()).mappings().all())
@@ -156,7 +161,7 @@ def _import_plan(connection, fixture: Sequence[Mapping[str, object]]) -> tuple[s
 
 
 def apply_qa_fixture(settings: Settings, fixture: Sequence[Mapping[str, object]]) -> ImportResult:
-    if supabase_target_binding_state(settings) != "ok": return ImportResult(False, "target_not_verified")
+    if settings.database_mode != "standalone" and supabase_target_binding_state(settings) != "ok": return ImportResult(False, "target_not_verified")
     try: engine = database_engine(settings)
     except Exception: return ImportResult(False, "configuration_invalid")  # noqa: BLE001
     if engine is None: return ImportResult(False, "not_configured")

@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 from .config import Settings, get_settings
 from .errors import AppError
+from .local_auth import decode_token as decode_local_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
 JWT_ALGORITHMS = ("ES256", "RS256")
@@ -119,7 +120,11 @@ def get_current_principal(
         return Principal(subject="local-dev", development_bypass=True)
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise AppError("AUTH_REQUIRED", "需要有效的 Bearer 登录令牌", status_code=401)
-    payload = _decode_token(credentials.credentials, settings)
+    payload = (
+        decode_local_token(credentials.credentials, settings)
+        if settings.auth_mode == "local"
+        else _decode_token(credentials.credentials, settings)
+    )
     email = payload.get("email")
     return Principal(
         subject=payload["sub"].strip(),

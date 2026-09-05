@@ -4,6 +4,8 @@ Revision ID: 0003_policy_library
 Revises: 0002_identity_access
 """
 
+import os
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -16,6 +18,10 @@ depends_on = None
 
 def _postgresql_only() -> bool:
     return op.get_bind().dialect.name == "postgresql"
+
+
+def _standalone_mode() -> bool:
+    return os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
 
 
 def upgrade() -> None:
@@ -55,8 +61,9 @@ def upgrade() -> None:
     op.create_index("ix_policy_documents_region_published", "policy_documents", ["region_code", "published_date"], schema="app")
     op.create_index("ix_policy_documents_title", "policy_documents", ["title"], schema="app")
     op.execute("ALTER TABLE app.policy_documents ENABLE ROW LEVEL SECURITY")
-    op.execute("REVOKE ALL PRIVILEGES ON TABLE app.policy_documents FROM anon")
-    op.execute("REVOKE ALL PRIVILEGES ON TABLE app.policy_documents FROM authenticated")
+    if not _standalone_mode():
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE app.policy_documents FROM anon")
+        op.execute("REVOKE ALL PRIVILEGES ON TABLE app.policy_documents FROM authenticated")
 
 
 def downgrade() -> None:

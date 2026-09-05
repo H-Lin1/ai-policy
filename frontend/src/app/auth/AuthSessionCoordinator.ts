@@ -1,11 +1,13 @@
-import type { Session } from '@supabase/supabase-js'
-
 import {
   ApiError,
   type MeResponse,
   type RoleCode,
   type WorkspaceResponse,
 } from '../../lib/api/client'
+
+export interface AuthSession {
+  access_token: string
+}
 
 export type AuthState =
   | { status: 'configuration_missing'; message: string }
@@ -21,12 +23,12 @@ export interface AuthSnapshot {
 
 export interface AuthGateway {
   getSession: () => Promise<{
-    data: { session: Session | null }
+    data: { session: AuthSession | null }
     error: unknown | null
   }>
-  onAuthStateChange: (callback: (session: Session | null) => void) => () => void
-  signInWithPassword: (credentials: { email: string; password: string }) => Promise<{
-    data: { session: Session | null }
+  onAuthStateChange: (callback: (session: AuthSession | null) => void) => () => void
+  signInWithPassword: (credentials: { username: string; password: string }) => Promise<{
+    data: { session: AuthSession | null }
     error: unknown | null
   }>
   signOut: () => Promise<unknown>
@@ -54,7 +56,7 @@ function publicIdentityError(error: unknown): { message: string; code?: string }
 export class AuthSessionCoordinator {
   private readonly listeners = new Set<SnapshotListener>()
   private snapshot: AuthSnapshot
-  private session: Session | null = null
+  private session: AuthSession | null = null
   private revision = 0
   private active = false
   private unsubscribeAuth: (() => void) | null = null
@@ -104,13 +106,13 @@ export class AuthSessionCoordinator {
     this.unsubscribeAuth = null
   }
 
-  async signIn(email: string, password: string): Promise<string | null> {
+  async signIn(username: string, password: string): Promise<string | null> {
     const { auth } = this.dependencies
     if (!auth) return configurationMessage
 
     const revision = ++this.revision
     try {
-      const { data, error } = await auth.signInWithPassword({ email, password })
+      const { data, error } = await auth.signInWithPassword({ username, password })
       if (error || !data.session) {
         return '邮箱或密码不正确，或登录服务暂不可用'
       }
@@ -173,7 +175,7 @@ export class AuthSessionCoordinator {
     }
   }
 
-  private acceptAuthEvent(session: Session | null): void {
+  private acceptAuthEvent(session: AuthSession | null): void {
     if (!this.active) return
 
     const currentToken = this.session?.access_token ?? null
@@ -190,7 +192,7 @@ export class AuthSessionCoordinator {
     void this.resolveSession(session, revision)
   }
 
-  private async resolveSession(session: Session | null, revision: number): Promise<void> {
+  private async resolveSession(session: AuthSession | null, revision: number): Promise<void> {
     if (!this.isCurrent(revision)) return
     this.session = session
     if (!session) {
