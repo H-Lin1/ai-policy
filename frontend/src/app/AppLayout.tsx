@@ -16,7 +16,6 @@ const roleNavigation: Array<{ role: RoleCode; to: string; label: string }> = [
   { role: 'individual', to: roleWorkspacePath('individual'), label: '个人服务' },
   { role: 'enterprise', to: roleWorkspacePath('enterprise'), label: '企业服务' },
   { role: 'government', to: roleWorkspacePath('government'), label: '政府办理' },
-  { role: 'admin', to: roleWorkspacePath('admin'), label: '平台管理' },
 ]
 
 const authenticatedUserNavigation = [
@@ -48,7 +47,9 @@ export function AppLayout() {
         ...authenticatedUserNavigation,
         ...(isEnterpriseUser ? [{ to: '/my-enterprise', label: '我的企业' }] : []),
       ]
-    : [
+    : availableRoles.includes('admin')
+      ? authenticatedUserNavigation.slice(0, 3)
+      : [
         ...authenticatedRoleNavigation,
         ...(availableRoles.includes('government') ? [{ to: '/consultations', label: '咨询办理' }] : []),
         ...roleNavigation.filter(({ role }) => availableRoles.includes(role)),

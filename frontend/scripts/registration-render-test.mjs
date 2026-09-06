@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const router = await readFile(new URL('../src/app/router.tsx', import.meta.url), 'utf8')
+const login = await readFile(new URL('../src/app/pages/LoginPage.tsx', import.meta.url), 'utf8')
+const registration = await readFile(new URL('../src/app/pages/RegistrationPage.tsx', import.meta.url), 'utf8')
+const status = await readFile(new URL('../src/app/pages/RegistrationStatusPage.tsx', import.meta.url), 'utf8')
+const adminList = await readFile(new URL('../src/app/pages/AdminRegistrationApplicationsPage.tsx', import.meta.url), 'utf8')
+const adminDetail = await readFile(new URL('../src/app/pages/AdminRegistrationApplicationDetailPage.tsx', import.meta.url), 'utf8')
+const client = await readFile(new URL('../src/lib/api/client.ts', import.meta.url), 'utf8')
+const home = await readFile(new URL('../src/app/pages/WorkspaceHomePage.tsx', import.meta.url), 'utf8')
+const styles = await readFile(new URL('../src/styles.css', import.meta.url), 'utf8')
+
+for (const path of ["path: 'register'", "path: 'registration-status'", "path: 'registration-applications'", "path: 'registration-applications/:id'"]) assert.ok(router.includes(path), `missing route ${path}`)
+for (const text of ['注册个人账号', '提交企业入驻申请', '提交政府账号开通申请', '查询申请状态']) assert.ok(login.includes(text), `login missing ${text}`)
+for (const text of ['企业名称', '统一社会信用代码', '使用人姓名', '政府部门', '请选择部门', '工作邮箱', '申请理由', '确认密码']) assert.ok(registration.includes(text), `registration missing ${text}`)
+assert.ok(registration.includes('getRegistrationDepartments'), 'government registration must load directory')
+assert.ok(status.includes('申请编号') && status.includes('手机号或邮箱'), 'status verification fields missing')
+assert.ok(adminList.includes("roles.includes('admin')") && adminDetail.includes("roles.includes('admin')"), 'admin role UI guard missing')
+assert.ok(adminDetail.includes('通过申请') && adminDetail.includes('拒绝申请'), 'admin decisions missing')
+for (const path of ['/iam/registrations/individual', '/iam/registrations/enterprise', '/iam/registrations/government', '/admin/registration-applications']) assert.ok(client.includes(path), `API path missing ${path}`)
+for (const contract of ["result?.status !== 'created'", 'window.setTimeout', "navigate('/login?role=individual'", 'registration-success-card', '立即前往登录']) assert.ok(registration.includes(contract), `success flow missing ${contract}`)
+assert.ok(home.includes('className="admin-login-entry"') && home.includes('to="/login?role=admin"'), 'public home admin login entry missing')
+for (const rule of ['.registration-page { width: min(100%, 760px); display: flex; flex-direction: column; align-items: center;', '.registration-intro, .registration-panel { width: min(100%, 620px);', '.admin-login-entry {']) assert.ok(styles.includes(rule), `registration visual contract missing ${rule}`)
+process.stdout.write('PASS registration and independent admin approval contracts\n')

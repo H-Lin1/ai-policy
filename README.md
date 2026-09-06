@@ -83,7 +83,7 @@ cp frontend/.env.example frontend/.env.local
 将 owner 给出的值填入对应文件。启用本地部门分类时，项目根 `.env` 至少需要以下四项（路径相对于项目根目录）：
 
 ```dotenv
-CLASSIFIER_MODEL_PATH=backend/models/sz/szTCN变为2个一维卷积3best.model.pth
+CLASSIFIER_MODEL_PATH=backend/models/sz/sz_classifier.pth
 CLASSIFIER_TOKENIZER_PATH=backend/models/hfl_chinese_bert_wwm
 CLASSIFIER_LABEL_BINDINGS_PATH=backend/models/sz/department_label_bindings.json
 CLASSIFIER_DEPARTMENT_EMBEDDINGS_PATH=backend/models/sz/10000szdepartment_embeddings.pth

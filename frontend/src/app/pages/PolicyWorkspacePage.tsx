@@ -86,7 +86,7 @@ function PolicyListCard({ policy }: { policy: PolicyListItem }) {
       <div className="policy-card-meta">{policy.issuing_organization ?? '发布机构待补充'}{policy.published_date ? ` · ${policy.published_date}` : ''}</div>
       <h2><Link to={`/policies/${policy.id}`}>{policy.title}</Link></h2>
       <p>{policy.document_no ?? '官方文号待补充'}</p>
-      <a href={policy.source_url} target="_blank" rel="noreferrer">查看官方来源</a>
+      {policy.source_url ? <a href={policy.source_url} target="_blank" rel="noreferrer">查看官方来源</a> : null}
     </article>
   )
 }
@@ -103,7 +103,7 @@ export function PolicyDetailView({ policy }: { policy: PolicyDetail }) {
         <div><dt>官方文号</dt><dd>{policy.document_no ?? '待补充'}</dd></div>
         <div><dt>采集时间</dt><dd>{new Date(policy.collected_at).toLocaleString('zh-CN')}</dd></div>
       </dl>
-      <p><a href={policy.document_url ?? policy.source_url} target="_blank" rel="noreferrer">查看官方原文</a></p>
+      {policy.document_url ?? policy.source_url ? <p><a href={policy.document_url ?? policy.source_url ?? undefined} target="_blank" rel="noreferrer">查看官方原文</a></p> : null}
       <div className="policy-content-text">{policy.content_text.split('\n').map((paragraph, index) => <p key={`${index}-${paragraph.slice(0, 12)}`}>{paragraph || '\u00a0'}</p>)}</div>
     </article>
   )

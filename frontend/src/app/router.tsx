@@ -11,6 +11,14 @@ import { WorkspaceHomePage } from './pages/WorkspaceHomePage'
 import { ConsultationWorkspacePage } from './pages/ConsultationWorkspacePage'
 import { EnterpriseProfilePage } from './pages/EnterpriseProfilePage'
 import { authenticatedHomePath, roleWorkspacePath } from './roleRoutes'
+import { RegistrationPage } from './pages/RegistrationPage'
+import { RegistrationStatusPage } from './pages/RegistrationStatusPage'
+import { AdminRegistrationApplicationsPage } from './pages/AdminRegistrationApplicationsPage'
+import { AdminRegistrationApplicationDetailPage } from './pages/AdminRegistrationApplicationDetailPage'
+import { AdminPoliciesPage } from './pages/AdminPoliciesPage'
+import { AdminPolicyEditorPage } from './pages/AdminPolicyEditorPage'
+import { AdminAccountsPage } from './pages/AdminAccountsPage'
+import { AdminAccountEditorPage } from './pages/AdminAccountEditorPage'
 
 function NotFoundPage() {
   return (
@@ -33,6 +41,8 @@ export const router = createBrowserRouter([
       { index: true, element: <WorkspaceHomePage /> },
       { path: authenticatedHomePath.slice(1), element: <WorkspaceHomePage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegistrationPage /> },
+      { path: 'registration-status', element: <RegistrationStatusPage /> },
       { path: 'health', element: <HealthPage /> },
       { path: 'policies', element: <PolicyWorkspacePage /> },
       { path: 'policies/:policyId', element: <PolicyWorkspacePage /> },
@@ -45,7 +55,13 @@ export const router = createBrowserRouter([
       { path: roleWorkspacePath('individual').slice(1), element: <RoleWorkspacePage role="individual" /> },
       { path: roleWorkspacePath('enterprise').slice(1), element: <RoleWorkspacePage role="enterprise" /> },
       { path: roleWorkspacePath('government').slice(1), element: <RoleWorkspacePage role="government" /> },
-      { path: roleWorkspacePath('admin').slice(1), element: <RoleWorkspacePage role="admin" /> },
+      { path: 'registration-applications', element: <AdminRegistrationApplicationsPage /> },
+      { path: 'registration-applications/:id', element: <AdminRegistrationApplicationDetailPage /> },
+      { path: 'policy-management', element: <AdminPoliciesPage /> },
+      { path: 'policy-management/new', element: <AdminPolicyEditorPage /> },
+      { path: 'account-management', element: <AdminAccountsPage /> },
+      { path: 'account-management/new', element: <AdminAccountEditorPage /> },
+      { path: 'account-management/:userId', element: <AdminAccountEditorPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

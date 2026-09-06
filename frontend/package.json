@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "npm run test:auth-provider && npm run test:auth-guard && npm run test:visual-baseline && npm run test:responsive-auth && npm run test:policy-library && npm run test:historical-qa && npm run test:classification && npm run test:policy-qa && npm run test:consultation",
+    "test": "npm run test:auth-provider && npm run test:auth-guard && npm run test:visual-baseline && npm run test:responsive-auth && npm run test:policy-library && npm run test:historical-qa && npm run test:classification && npm run test:policy-qa && npm run test:consultation && npm run test:registration && npm run test:admin-policy && npm run test:admin-account",
     "test:auth-provider": "node scripts/auth-session-coordinator-test.mjs",
     "test:auth-guard": "node scripts/auth-role-guard-render-test.mjs",
     "test:visual-baseline": "node scripts/visual-baseline-render-test.mjs",
@@ -16,7 +16,10 @@
     "test:historical-qa": "node scripts/historical-qa-render-test.mjs",
     "test:classification": "node scripts/classification-render-test.mjs",
     "test:policy-qa": "node scripts/policy-qa-render-test.mjs",
-    "test:consultation": "node scripts/consultation-render-test.mjs"
+    "test:consultation": "node scripts/consultation-render-test.mjs",
+    "test:registration": "node scripts/registration-render-test.mjs",
+    "test:admin-policy": "node scripts/admin-policy-render-test.mjs",
+    "test:admin-account": "node scripts/admin-account-render-test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.1",

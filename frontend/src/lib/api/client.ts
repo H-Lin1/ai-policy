@@ -59,6 +59,59 @@ export interface LocalLoginResponse {
   expires_in: number
 }
 
+export interface RegistrationCreatedResponse {
+  id?: string | null
+  status: 'created' | 'pending'
+  message: string
+}
+
+export interface RegistrationStatusResponse {
+  id: string
+  application_type: 'enterprise' | 'government'
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  submitted_at: UtcDateTimeString
+  reviewed_at?: UtcDateTimeString | null
+  review_reason?: string | null
+}
+
+export interface AdminApplicationSummary {
+  id: string
+  application_type: 'enterprise' | 'government'
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled'
+  title: string
+  user_name: string
+  department_name?: string | null
+  submitted_at: UtcDateTimeString
+  reviewed_at?: UtcDateTimeString | null
+}
+
+export interface AdminApplicationDetail extends AdminApplicationSummary {
+  form_data: Record<string, unknown>
+  login_username: string
+  review_reason?: string | null
+}
+
+export interface AdminAccountSummary {
+  user_id: string
+  username: string
+  display_name: string
+  email?: string | null
+  contact_phone?: string | null
+  job_title?: string | null
+  roles: RoleCode[]
+  organization_id?: string | null
+  organization_name?: string | null
+  organization_type?: string | null
+  department_id?: string | null
+  department_name?: string | null
+  status: 'active' | 'disabled'
+  created_at: UtcDateTimeString
+}
+
+export interface AdminAccountDetail extends AdminAccountSummary { region_code: string }
+export interface AdminAccountPage { items: AdminAccountSummary[]; page: number; page_size: number; total: number; total_pages: number }
+export interface AdminAccountCounts { individual: number; enterprise: number; government: number; admin: number; active: number; disabled: number }
+
 export interface WorkspaceResponse {
   role: RoleCode
   title: string
@@ -86,7 +139,7 @@ export interface PolicyListItem {
   title: string
   document_no?: string | null
   issuing_organization?: string | null
-  source_url: string
+  source_url?: string | null
   published_date?: string | null
   effective_status?: string | null
 }
@@ -99,6 +152,50 @@ export interface PolicyDetail extends PolicyListItem {
   requested_title?: string | null
   reference_count?: number | null
   source_years?: string | null
+}
+
+export type AdminPolicyStatus = 'draft' | 'published' | 'withdrawn'
+export type PolicyEffectiveStatus = 'active' | 'pending' | 'expired' | 'repealed' | 'unknown'
+
+export interface AdminPolicyInput {
+  title: string
+  document_no?: string | null
+  issuing_organization: string
+  source_url?: string | null
+  document_url?: string | null
+  published_date: string
+  effective_status: PolicyEffectiveStatus
+  content_text: string
+  source_type: 'manual' | 'markdown'
+  original_filename?: string | null
+  raw_markdown?: string | null
+}
+
+export interface AdminPolicyRecord {
+  id: string
+  title: string
+  document_no?: string | null
+  issuing_organization?: string | null
+  source_url?: string | null
+  document_url?: string | null
+  published_date?: string | null
+  effective_status?: string | null
+  content_text: string
+  source_type: 'external_url' | 'manual' | 'markdown'
+  raw_markdown?: string | null
+  publication_status: AdminPolicyStatus
+  content_sha256: string
+  created_at: UtcDateTimeString
+  published_at?: UtcDateTimeString | null
+  withdrawn_at?: UtcDateTimeString | null
+}
+
+export interface MarkdownParseItem {
+  filename: string
+  status: 'ready' | 'warning' | 'failed'
+  fields?: AdminPolicyInput | null
+  errors: string[]
+  warnings: string[]
 }
 
 export interface HistoricalQaListItem {
@@ -251,6 +348,41 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     }),
+  registerIndividual: (payload: { username: string; password: string; password_confirmation: string; display_name: string; terms_accepted: boolean }) =>
+    request<RegistrationCreatedResponse>('/iam/registrations/individual', { method: 'POST', body: JSON.stringify(payload) }),
+  registerEnterprise: (payload: Record<string, unknown>) =>
+    request<RegistrationCreatedResponse>('/iam/registrations/enterprise', { method: 'POST', body: JSON.stringify(payload) }),
+  registerGovernment: (payload: Record<string, unknown>) =>
+    request<RegistrationCreatedResponse>('/iam/registrations/government', { method: 'POST', body: JSON.stringify(payload) }),
+  getRegistrationDepartments: () =>
+    request<Array<{ department_id: string; department_name: string }>>('/iam/registration-departments'),
+  getRegistrationStatus: (id: string, verification: string) =>
+    request<RegistrationStatusResponse>(`/iam/registration-applications/${encodeURIComponent(id)}/status?verification=${encodeURIComponent(verification)}`),
+  getAdminRegistrationApplications: (params: { page?: number; pageSize?: number; applicationType?: string; status?: string; keyword?: string }, accessToken: string) => {
+    const search = new URLSearchParams()
+    if (params.page) search.set('page', String(params.page))
+    if (params.pageSize) search.set('page_size', String(params.pageSize))
+    if (params.applicationType) search.set('application_type', params.applicationType)
+    if (params.status) search.set('status', params.status)
+    if (params.keyword) search.set('keyword', params.keyword)
+    return request<PageResponse<AdminApplicationSummary>>(`/admin/registration-applications?${search.toString()}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  },
+  getAdminRegistrationApplication: (id: string, accessToken: string) =>
+    request<AdminApplicationDetail>(`/admin/registration-applications/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+  approveRegistrationApplication: (id: string, note: string, accessToken: string) =>
+    request<AdminApplicationDetail>(`/admin/registration-applications/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ note: note || null }), headers: { Authorization: `Bearer ${accessToken}` } }),
+  rejectRegistrationApplication: (id: string, reason: string, accessToken: string) =>
+    request<AdminApplicationDetail>(`/admin/registration-applications/${encodeURIComponent(id)}/reject`, { method: 'POST', body: JSON.stringify({ reason }), headers: { Authorization: `Bearer ${accessToken}` } }),
+  getAdminAccountCounts: (accessToken: string) => request<AdminAccountCounts>('/admin/accounts/counts', { headers: { Authorization: `Bearer ${accessToken}` } }),
+  getAdminAccounts: (params: { page?: number; role?: string; status?: string; keyword?: string }, accessToken: string) => {
+    const search = new URLSearchParams(); search.set('page', String(params.page ?? 1)); search.set('page_size', '20'); if (params.role) search.set('role', params.role); if (params.status) search.set('status', params.status); if (params.keyword) search.set('keyword', params.keyword)
+    return request<AdminAccountPage>(`/admin/accounts?${search}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  },
+  getAdminAccount: (id: string, accessToken: string) => request<AdminAccountDetail>(`/admin/accounts/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+  createAdminAccount: (role: RoleCode, payload: Record<string, unknown>, accessToken: string) => request<AdminAccountDetail>(`/admin/accounts/${role}`, { method: 'POST', body: JSON.stringify(payload), headers: { Authorization: `Bearer ${accessToken}` } }),
+  updateAdminAccount: (id: string, payload: Record<string, unknown>, accessToken: string) => request<AdminAccountDetail>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload), headers: { Authorization: `Bearer ${accessToken}` } }),
+  disableAdminAccount: (id: string, accessToken: string) => request<AdminAccountDetail>(`/admin/accounts/${encodeURIComponent(id)}/disable`, { method: 'POST', body: JSON.stringify({}), headers: { Authorization: `Bearer ${accessToken}` } }),
+  enableAdminAccount: (id: string, accessToken: string) => request<AdminAccountDetail>(`/admin/accounts/${encodeURIComponent(id)}/enable`, { method: 'POST', body: JSON.stringify({}), headers: { Authorization: `Bearer ${accessToken}` } }),
   getHealth: () => request<HealthResponse>('/health'),
   getLive: () => request<HealthResponse>('/health/live'),
   getReady: () => request<HealthResponse>('/health/ready'),
@@ -276,6 +408,21 @@ export const apiClient = {
     request<PolicyDetail>(`/policies/${encodeURIComponent(id)}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     }),
+  getAdminPolicies: (status: AdminPolicyStatus | '', accessToken: string) =>
+    request<AdminPolicyRecord[]>(`/admin/policies${status ? `?status=${status}` : ''}`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+  createAdminPolicy: (payload: AdminPolicyInput & { action: 'draft' | 'publish' }, accessToken: string) =>
+    request<AdminPolicyRecord>('/admin/policies', { method: 'POST', body: JSON.stringify(payload), headers: { Authorization: `Bearer ${accessToken}` } }),
+  parsePolicyMarkdown: (files: Array<{ filename: string; content: string }>, accessToken: string) =>
+    request<{ items: MarkdownParseItem[] }>('/admin/policies/markdown-parse', { method: 'POST', body: JSON.stringify({ files }), headers: { Authorization: `Bearer ${accessToken}` } }),
+  getPolicyMarkdownExample: (accessToken: string) =>
+    fetch(`${baseUrl}/admin/policies/markdown-example`, { headers: { Authorization: `Bearer ${accessToken}` } }).then(async (response) => {
+      if (!response.ok) throw new ApiError('Markdown 示例暂不可用。', response.status)
+      return response.text()
+    }),
+  publishAdminPolicy: (id: string, accessToken: string) =>
+    request<AdminPolicyRecord>(`/admin/policies/${encodeURIComponent(id)}/publish`, { method: 'POST', body: JSON.stringify({}), headers: { Authorization: `Bearer ${accessToken}` } }),
+  withdrawAdminPolicy: (id: string, reason: string, accessToken: string) =>
+    request<AdminPolicyRecord>(`/admin/policies/${encodeURIComponent(id)}/withdraw`, { method: 'POST', body: JSON.stringify({ reason }), headers: { Authorization: `Bearer ${accessToken}` } }),
   getHistoricalQa: (params: { page?: number; pageSize?: number; query?: string }, accessToken: string) => {
     const search = new URLSearchParams()
     if (params.page) search.set('page', String(params.page))

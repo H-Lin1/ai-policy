@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import { authenticatedHomePath, roleWorkspacePath } from '../roleRoutes'
@@ -61,7 +61,11 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
 
   const intendedRole = readIntendedRole(location.state)
+  const queryRole = new URLSearchParams(location.search).get('role')
+  const registrationRole = intendedRole ?? (queryRole === 'individual' || queryRole === 'enterprise' || queryRole === 'government' ? queryRole : null)
+  const isAdminLogin = queryRole === 'admin'
   if (state.status === 'ready') {
+    if (isAdminLogin && state.identity.roles.includes('admin')) return <Navigate to={authenticatedHomePath} replace />
     const decision = resolvePostLoginDecision(intendedRole, state.identity.roles)
     if (decision.kind !== 'mismatch') return <Navigate to={decision.destination} replace />
     return (
@@ -97,8 +101,8 @@ export function LoginPage() {
     <section className="page-content login-page">
       <div className="login-intro">
         <div className="eyebrow">政通惠 · 安全登录</div>
-        <h1>进入你的<span className="accent-text">政策服务工作区</span></h1>
-        <p className="lead">使用已配置的平台账号继续。身份和工作区权限由服务端统一核验。</p>
+        <h1>{isAdminLogin ? '管理员登录' : '进入你的'}<span className="accent-text">{isAdminLogin ? '管理员工作台' : '政策服务工作区'}</span></h1>
+        <p className="lead">使用已配置的{isAdminLogin ? '管理员' : '平台'}账号继续。身份和工作区权限由服务端统一核验。</p>
       </div>
       <div className="login-panel">
         <form className="login-form" onSubmit={submit}>
@@ -135,6 +139,7 @@ export function LoginPage() {
           <button className="button button-primary" type="submit" disabled={busy || unavailable}>
             {busy ? '正在登录' : '登录'}
           </button>
+          <p className="muted login-register-link">{registrationRole === 'individual' ? <Link to="/register?role=individual">注册个人账号</Link> : registrationRole === 'enterprise' ? <><Link to="/register?role=enterprise">提交企业入驻申请</Link> · <Link to="/registration-status">查询申请状态</Link></> : registrationRole === 'government' ? <><Link to="/register?role=government">提交政府账号开通申请</Link> · <Link to="/registration-status">查询申请状态</Link></> : null}</p>
         </form>
         <div className="login-assurance" aria-label="登录说明">
           <strong>深圳 · V1.0</strong>

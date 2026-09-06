@@ -7,14 +7,14 @@ const roleLabels: Record<RoleCode, string> = {
   individual: '个人服务',
   enterprise: '企业服务',
   government: '政府办理',
-  admin: '平台管理',
+  admin: '管理员',
 }
 
 const roleDescriptions: Record<RoleCode, string> = {
   individual: '个人政策服务与办事支持',
   enterprise: '惠企政策服务与申报支持',
   government: '政府政策服务与办理工作区',
-  admin: '平台配置与运行管理工作区',
+  admin: '管理员工作区',
 }
 
 export function RoleWorkspacePage({ role }: { role: RoleCode }) {

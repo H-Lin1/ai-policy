@@ -518,6 +518,75 @@ code {
 .login-form input:disabled { color: #8e95a4; background: #f2f4f8; }
 .login-form .button { width: 100%; min-height: 46px; margin-top: 2px; }
 .login-form .error-message { margin-top: -3px; }
+.login-register-link { text-align: center; margin: 12px 0 0; }
+.registration-page, .registration-status-page, .admin-applications-page, .admin-application-detail { max-width: 980px; margin: 0 auto; }
+.registration-page { width: min(100%, 760px); display: flex; flex-direction: column; align-items: center; }
+.registration-intro, .registration-panel { width: min(100%, 620px); }
+.registration-intro { text-align: center; }
+.registration-intro h1, .registration-intro .lead { margin-right: auto; margin-left: auto; }
+.registration-page .login-form { width: 100%; max-width: none; }
+.registration-page textarea { min-height: 88px; resize: vertical; }
+.login-form label.terms-check { display: flex; grid-template-columns: none; align-items: center; gap: 8px; }
+.login-form label.terms-check input { width: 18px; min-height: 18px; height: 18px; margin: 0; }
+.success-message { color: var(--success); }
+.registration-complete-page { min-height: 640px; justify-content: center; }
+.registration-success-card { width: min(100%, 540px); display: grid; justify-items: center; gap: 14px; border: 1px solid var(--border); border-radius: 12px; padding: 46px 40px; background: var(--surface); box-shadow: var(--shadow-soft); text-align: center; }
+.registration-success-card h1 { margin: 2px 0 0; font-size: 30px; }
+.registration-success-card p { max-width: 410px; margin: 0 0 6px; color: var(--muted); line-height: 1.7; }
+.registration-success-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--success); font-size: 27px; font-weight: 800; }
+.registration-redirect-note { color: var(--muted); font-size: 12px; }
+.admin-login-entry { display: block; width: fit-content; margin: 34px auto 0; color: #9299a8; font-size: 11px; text-decoration: none; }
+.admin-login-entry:hover { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+.admin-application-list { display: grid; gap: 12px; margin-top: 24px; }
+.admin-application-item { display: grid; gap: 4px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: inherit; text-decoration: none; }
+.admin-application-item:hover { border-color: var(--accent); }
+.admin-application-item small { color: var(--muted); }
+.application-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 24px 0; }
+.application-fields div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.application-fields dt { color: var(--muted); font-size: 13px; }
+.application-fields dd { margin: 4px 0 0; word-break: break-word; }
+.approval-dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgb(18 27 48 / 55%); }
+.approval-dialog { width: min(520px, 100%); padding: 24px; border-radius: 16px; background: var(--surface); box-shadow: 0 22px 60px rgb(18 27 48 / 28%); }
+.approval-dialog label { display: grid; gap: 8px; }
+.approval-dialog textarea { min-height: 110px; resize: vertical; }
+.admin-policy-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.admin-policy-filters, .admin-policy-mode, .admin-policy-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.admin-policy-list, .markdown-item-list { display: grid; gap: 14px; margin-top: 26px; }
+.admin-policy-card, .markdown-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; border: 1px solid var(--border); border-radius: 9px; padding: 20px; background: var(--surface); }
+.admin-policy-card h2 { margin: 8px 0; }
+.admin-policy-card p { margin: 0; color: var(--muted); }
+.policy-status { display: inline-block; color: var(--muted); font-size: 11px; font-weight: 750; }
+.policy-status-published { color: var(--success); }
+.policy-status-withdrawn { color: var(--danger); }
+.admin-policy-form, .markdown-upload-box { margin-top: 26px; }
+.policy-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.policy-fields label { display: grid; gap: 7px; color: var(--ink-soft); font-size: 13px; font-weight: 700; }
+.policy-fields input, .policy-fields select, .policy-fields textarea { width: 100%; min-height: 44px; border: 1px solid var(--border-strong); border-radius: 5px; padding: 10px 12px; background: #fff; }
+.policy-fields textarea { min-height: 260px; resize: vertical; }
+.policy-body-field { grid-column: 1 / -1; }
+.policy-fields.is-compact textarea { min-height: 150px; }
+.markdown-upload-box { border: 1px dashed var(--border-strong); border-radius: 9px; padding: 24px; background: var(--surface); }
+.markdown-upload-box p { color: var(--muted); font-size: 12px; }
+.markdown-example-button { border: 0; padding: 0; background: transparent; cursor: pointer; }
+.markdown-item { display: block; }
+.markdown-item-heading { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 18px; font-weight: 700; }
+.markdown-item-failed { border-color: #e6bfc5; }
+.policy-preview-dialog { position: relative; width: min(780px, 100%); max-height: 86vh; overflow: auto; border-radius: 12px; padding: 30px; background: var(--surface); }
+.policy-preview-close { position: absolute; top: 16px; right: 18px; border: 0; background: transparent; cursor: pointer; font-size: 24px; }
+.policy-preview-content { margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px; white-space: pre-wrap; line-height: 1.8; }
+.admin-workspace-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.admin-homepage { max-width: 1100px; }
+.admin-home-overview { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; margin-top: 28px; border-left: 3px solid var(--accent); background: var(--border); }
+.admin-home-overview > div { padding: 14px 18px; background: var(--surface); }
+.admin-home-overview div { display: grid; gap: 5px; }
+.admin-home-overview span { color: var(--muted); font-size: 13px; }
+.admin-home-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 28px; }
+.account-filters { display: grid; grid-template-columns: 180px 180px minmax(240px, 1fr); gap: 12px; margin-top: 28px; }
+.account-filters input, .account-filters select { min-height: 42px; border: 1px solid var(--border-strong); border-radius: 5px; padding: 8px 10px; background: #fff; }
+.account-list { display: grid; gap: 14px; margin-top: 24px; }
+.account-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; border: 1px solid var(--border); border-radius: 9px; padding: 20px; background: var(--surface); }
+.account-card h2 { margin: 7px 0; }
+.account-card p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .login-assurance {
   display: flex;
   align-items: baseline;
@@ -822,6 +891,13 @@ code {
     align-items: start;
     gap: 34px;
   }
+  .registration-page { align-items: center; }
+  .registration-intro, .registration-panel { width: 100%; }
+  .registration-success-card { padding: 36px 22px; }
+  .admin-policy-heading, .admin-policy-card, .markdown-item-heading { flex-direction: column; }
+  .policy-fields, .admin-workspace-actions, .admin-home-actions, .account-filters { grid-template-columns: 1fr; }
+  .admin-home-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .account-card { flex-direction: column; }
   .login-form { padding: 24px 20px; }
   .login-assurance { align-items: flex-start; flex-direction: column; gap: 3px; }
   .role-mismatch-page { padding: 40px 20px 64px; }

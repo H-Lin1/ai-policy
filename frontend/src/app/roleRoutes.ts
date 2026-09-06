@@ -6,7 +6,7 @@ export const roleWorkspacePaths: Record<RoleCode, string> = {
   individual: '/personal',
   enterprise: '/enterprise',
   government: '/government',
-  admin: '/admin',
+  admin: authenticatedHomePath,
 }
 
 export function roleWorkspacePath(role: RoleCode): string {

@@ -15,6 +15,7 @@ from sqlalchemy import (
     text,
     true,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -132,12 +133,14 @@ class User(Base):
     """Standalone application account used when Supabase Auth is disabled."""
 
     __tablename__ = "users"
-    __table_args__ = {"schema": "app"}
+    __table_args__: ClassVar[dict[str, str]] = {"schema": "app"}
 
     id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
     username: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(320))
+    contact_phone: Mapped[str | None] = mapped_column(String(40))
+    job_title: Mapped[str | None] = mapped_column(String(120))
     display_name: Mapped[str] = mapped_column(String(160), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))
@@ -202,3 +205,61 @@ class UserRole(Base):
 
     profile: Mapped[Profile] = relationship(back_populates="user_roles")
     role: Mapped[Role] = relationship(back_populates="assignments")
+
+
+class RegistrationApplication(Base):
+    __tablename__ = "registration_applications"
+    __table_args__: ClassVar[tuple[object, ...]] = (
+        CheckConstraint("application_type IN ('enterprise', 'government')", name="ck_registration_application_type"),
+        CheckConstraint("status IN ('pending', 'approved', 'rejected', 'cancelled')", name="ck_registration_application_status"),
+        CheckConstraint("(application_type = 'government') = (department_id IS NOT NULL)", name="ck_registration_application_department"),
+        {"schema": "app"},
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    application_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default=text("'pending'"))
+    region_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.regions.id", ondelete="RESTRICT"), nullable=False)
+    department_id: Mapped[str | None] = mapped_column(String(96), ForeignKey("app.consultation_departments.department_id", ondelete="RESTRICT"))
+    login_username: Mapped[str] = mapped_column(String(128), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    form_data: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewer_user_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.profiles.user_id", ondelete="RESTRICT"))
+    review_reason: Mapped[str | None] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+
+
+class RegistrationApplicationEvent(Base):
+    __tablename__ = "registration_application_events"
+    __table_args__: ClassVar[tuple[object, ...]] = (
+        CheckConstraint("event_type IN ('submitted', 'approved', 'rejected', 'cancelled')", name="ck_registration_application_event_type"),
+        {"schema": "app"},
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    application_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.registration_applications.id", ondelete="RESTRICT"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor_user_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.profiles.user_id", ondelete="RESTRICT"))
+    reason: Mapped[str | None] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)
+
+
+class AccountManagementEvent(Base):
+    __tablename__ = "account_management_events"
+    __table_args__: ClassVar[tuple[object, ...]] = (
+        CheckConstraint(
+            "event_type IN ('account_created', 'account_updated', 'account_disabled', 'account_enabled', 'role_assigned', 'role_removed', 'organization_bound', 'department_bound')",
+            name="ck_account_management_event_type",
+        ),
+        {"schema": "app"},
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    target_user_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.users.id", ondelete="RESTRICT"), nullable=False)
+    actor_user_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("app.profiles.user_id", ondelete="RESTRICT"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    change_summary: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"), nullable=False)

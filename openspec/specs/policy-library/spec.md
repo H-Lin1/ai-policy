@@ -111,3 +111,30 @@ The database-backed policy list SHALL reuse one request-scoped database session 
 - **WHEN** acceptance runs against the configured Supabase project after `/me` primes the login path
 - **THEN** at least three warm page-one requests each complete within 5 seconds with median at most 2 seconds, and a cold request completes within 15 seconds or improves at least 50 percent from the recorded baseline, without exposing sensitive values or mutating external data
 
+### Requirement: Published-only policy visibility
+
+The backend SHALL expose authenticated policy list and detail responses only for records whose publication status is `published` and whose region is active Shenzhen. Draft and withdrawn records SHALL remain available only through authorized administrator policy APIs.
+
+#### Scenario: Ordinary reader sees published policies
+
+- **WHEN** an active Shenzhen user requests the policy list or a published policy detail
+- **THEN** the response contains only published records and preserves existing pagination, identity and no-store contracts
+
+#### Scenario: Ordinary reader cannot see draft or withdrawn policy
+
+- **WHEN** an active Shenzhen user requests a draft, withdrawn or unknown policy identifier
+- **THEN** the API returns the established not-found behavior without policy content
+
+### Requirement: Published-only policy visibility
+
+The backend SHALL expose authenticated policy list and detail responses only for records whose publication status is `published` and whose region is active Shenzhen. Draft and withdrawn records SHALL remain available only through authorized administrator policy APIs.
+
+#### Scenario: Ordinary reader sees published policies
+
+- **WHEN** an active Shenzhen user requests the policy list or a published policy detail
+- **THEN** the response contains only published records and preserves existing pagination, identity and no-store contracts
+
+#### Scenario: Ordinary reader cannot see draft or withdrawn policy
+
+- **WHEN** an active Shenzhen user requests a draft, withdrawn or unknown policy identifier
+- **THEN** the API returns the established not-found behavior without policy content

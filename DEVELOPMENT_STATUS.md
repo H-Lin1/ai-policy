@@ -10,14 +10,14 @@
 | 默认路径 | 单人串行；除非明确记录并行授权 |
 | 当前步骤 | `B1.8`（阶段功能完善与优化） |
 | 当前状态 | `in_progress`（持续收集、修复并验收现有功能问题） |
-| 产品/技术方案 | [`PRD-V1-B1-08`](./docs/PRD-V1-B1-08.md) V0.6；具体问题涉及合同或技术改动时分别补充 TECH/OpenSpec |
-| OpenSpec change | [`2026-08-23-refine-authenticated-home-routing`](./openspec/changes/archive/2026-08-23-refine-authenticated-home-routing/)（B18-005、B18-006，已归档） |
+| 产品/技术方案 | [`PRD-V1-B1-08`](./docs/PRD-V1-B1-08.md)；B18-010/011 见 [`PRD-V1-B1-08-ADMIN-HOMEPAGE-AND-ACCOUNTS`](./docs/PRD-V1-B1-08-ADMIN-HOMEPAGE-AND-ACCOUNTS.md) / [`TECH-V1-B1-08-ADMIN-HOME-ACCOUNTS`](./docs/TECH-V1-B1-08-ADMIN-HOME-ACCOUNTS.md) |
+| OpenSpec change | [`2026-09-06-refine-admin-home-and-account-management`](./openspec/changes/archive/2026-09-06-refine-admin-home-and-account-management/)（B18-010/011，已归档） |
 | 上一步 | `B1.7` 已归档；第一批联调与演示重置验收通过 |
-| 下一步 | 继续观察长时间空闲后的连接恢复；B1.8 继续按问题驱动收集现有功能优化项。 |
+| 下一步 | B18-010/011 已归档；本次改动准备推送到 GitHub，服务器可拉取 `main` 后执行 `0008` 及后续迁移核对；B1.8 继续按问题驱动收集优化项。 |
 | 阻塞项 | 无；B1.5 真实 RAG 仍为独立的外部交接/验收事项，当前交接基线为政策库具体条款检索与生成。 |
 | 飞书同步 | [`产品prd`](https://a9ihi0un9c.feishu.cn/drive/folder/Wrq0fzgr4lO4mqdBLyFcKvNJnbb) 已同步 UI1.5：[`TECH-V1-UI-06`](https://a9ihi0un9c.feishu.cn/docx/MRDsdr4WLohFV2xMPYmc2xjpnVy) 以机器人身份创建，父目录归属、正文结构与用户 `full_access` 已回读验证；UI1.4、UI1.3、UI1.2 和 B1.5 文档保持已同步状态 |
-| 最近证据 | 2026-08-26：真实 RAG 仍未实现；`RAG-BACKEND-HANDOFF-V1` 已更新为 V2.0，明确一期只读 `app.policy_documents` 的深圳具体条款，条款+问题生成回答并返回参考条款；当前迁移基线为 `0005_consultation_workflow`。全局 OpenSpec strict `15 passed, 0 failed`；未执行数据库或配置写入。 |
-| 最近更新时间 | 2026-08-26 |
+| 最近证据 | 2026-09-06：B18-010/011 已完成。管理员登录直接进入 `/homepage`，导航仅首页/政策中心/历史问答，三个管理功能由首页进入，`/admin` 为 404。`0008` 已应用本机 standalone；账号新增、编辑、停用/恢复、登录拒绝/恢复、自停用/占用部门/非管理员拒绝与审计均通过。桌面/移动账号页 14 个账号、无横向溢出；全量测试、Ruff、build、OpenSpec strict 通过。 |
+| 最近更新时间 | 2026-09-06 |
 
 本次范围决定：在 B1.7 与 B2.x 之间增加 B1.8“阶段功能完善与优化”。B1.8 只针对 B1.1-B1.7 现有功能持续检查、修复与优化；每个问题都记录到 `PRD-V1-B1-08` 并独立验收，涉及需求合同、API、数据库或权限变化时建立对应 TECH/OpenSpec。
 
@@ -63,7 +63,7 @@ S0.1 → S0.2 → S0.3 → S0.4 → S0.5 → S0.6
 | B1.5 | 政策/问答检索与 RAG | `archived`（真实 RAG 后端待外部交接/验收） | B1.2、B1.3、B1.4 |
 | B1.6 | 咨询闭环 | `archived`（部署与真实跨账号验收通过；补充说明、多轮消息和消息时间线不在范围内） | B1.1 |
 | B1.7 | 第一批联调与演示重置 | `archived`（审计通过；安全重置仅预检，结果 `already_clean`，未执行删除） | B1.1-B1.6 |
-| B1.8 | 阶段功能完善与优化 | `in_progress`（持续问题驱动；阶段收口后再进入 B2.x） | B1.1-B1.7 |
+| B1.8 | 阶段功能完善与优化 | `in_progress`（持续问题驱动；B18-001 至 B18-011 已完成；阶段收口后再进入 B2.x） | B1.1-B1.7 |
 
 ## 跨对话恢复协议
 

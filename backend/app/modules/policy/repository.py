@@ -25,7 +25,7 @@ class PolicyListRecord:
     title: str
     document_no: str | None
     issuing_organization: str | None
-    source_url: str
+    source_url: str | None
     published_date: date | None
     effective_status: str | None
 
@@ -70,7 +70,7 @@ def _list_record_from_row(row: dict[str, object]) -> PolicyListRecord:
             if isinstance(row["issuing_organization"], str)
             else None
         ),
-        source_url=str(row["source_url"]),
+        source_url=row["source_url"] if isinstance(row["source_url"], str) else None,
         published_date=(
             row["published_date"] if isinstance(row["published_date"], date) else None
         ),
@@ -94,11 +94,11 @@ class PolicyRepository:
             PolicyDocument.published_date,
             PolicyDocument.effective_status,
             func.count().over().label("_total"),
-        ).where(PolicyDocument.region_code == "sz")
+        ).where(PolicyDocument.region_code == "sz", PolicyDocument.publication_status == "published")
         count = (
             select(func.count())
             .select_from(PolicyDocument)
-            .where(PolicyDocument.region_code == "sz")
+            .where(PolicyDocument.region_code == "sz", PolicyDocument.publication_status == "published")
         )
         if query:
             pattern = f"%{query.strip()}%"
@@ -133,6 +133,7 @@ class PolicyRepository:
             select(PolicyDocument).where(
                 PolicyDocument.id == policy_id,
                 PolicyDocument.region_code == "sz",
+                PolicyDocument.publication_status == "published",
             )
         ).scalar_one_or_none()
         return _record_from_model(model) if model is not None else None

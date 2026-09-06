@@ -39,11 +39,11 @@ class ConsultationDepartment(Base):
         unique=True,
         nullable=False,
     )
-    government_user_id: Mapped[UUID] = mapped_column(
+    government_user_id: Mapped[UUID | None] = mapped_column(
         PostgreSQLUUID(as_uuid=True),
         ForeignKey("app.profiles.user_id", ondelete="RESTRICT"),
         unique=True,
-        nullable=False,
+        nullable=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=text("now()"))

@@ -144,7 +144,7 @@ try {
     individual: '/personal',
     enterprise: '/enterprise',
     government: '/government',
-    admin: '/admin',
+    admin: '/homepage',
   })
   process.stdout.write('PASS RoleGuard public role routes\n')
 

@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 
 import enterpriseServiceImage from '../../assets/ui1/enterprise-service.jpg'
 import individualServiceImage from '../../assets/ui1/individual-service.jpg'
-import type { RoleCode } from '../../lib/api/client'
+import { apiClient, type AdminAccountCounts, type RoleCode } from '../../lib/api/client'
 import { useAuth } from '../auth/AuthProvider'
 import { authenticatedHomePath, roleWorkspacePath } from '../roleRoutes'
 import { PolicyQaWorkbench } from './PolicyQaWorkbench'
@@ -12,7 +12,6 @@ const roleEntries: Array<{ role: RoleCode; label: string; description: string }>
   { role: 'individual', label: '个人服务', description: '政策查询与个人办事服务' },
   { role: 'enterprise', label: '企业服务', description: '惠企政策与企业办事服务' },
   { role: 'government', label: '政府办理', description: '政策服务与事项办理工作区' },
-  { role: 'admin', label: '平台管理', description: '平台配置与运行管理工作区' },
 ]
 
 export function WorkspaceHomePage() {
@@ -41,6 +40,10 @@ export function WorkspaceHomePage() {
     )
   }
 
+  if (state.identity.roles.includes('admin')) {
+    return <AdminHomepage displayName={state.identity.display_name} />
+  }
+
   const qaEligible = state.identity.roles.some((role) => role === 'individual' || role === 'enterprise')
   if (qaEligible) {
     return <section className="workspace-home qa-home"><PolicyQaWorkbench compact variant="workspace" /></section>
@@ -66,6 +69,13 @@ export function WorkspaceHomePage() {
       ))}
     </div>
   </section>
+}
+
+function AdminHomepage({ displayName }: { displayName: string }) {
+  const { getAccessToken } = useAuth()
+  const [counts, setCounts] = useState<AdminAccountCounts | null>(null)
+  useEffect(() => { const token = getAccessToken(); if (!token) return; void apiClient.getAdminAccountCounts(token).then(setCounts).catch(() => setCounts(null)) }, [getAccessToken])
+  return <section className="page-content admin-homepage"><div className="workspace-section-heading"><div><span className="section-label">Administrator</span><h1>管理员工作台</h1><p className="lead">集中管理平台账号、注册申请和政策内容。</p></div><span className="scope-caption">{displayName}</span></div><div className="admin-home-overview" aria-label="账号概览">{counts ? <><div><strong>{counts.individual}</strong><span>个人账号</span></div><div><strong>{counts.enterprise}</strong><span>企业账号</span></div><div><strong>{counts.government}</strong><span>政府账号</span></div><div><strong>{counts.admin}</strong><span>管理员账号</span></div><div><strong>{counts.active}</strong><span>正常账号</span></div><div><strong>{counts.disabled}</strong><span>已停用账号</span></div></> : <div><strong>账号概览</strong><span>正在读取四类账号及启停状态</span></div>}</div><div className="admin-home-actions"><Link className="workspace-link role-admin" to="/account-management"><strong>账号管理</strong><span>查看、创建、编辑、停用或恢复账号</span><span className="workspace-link-action">进入账号管理</span></Link><Link className="workspace-link role-government" to="/registration-applications"><strong>注册申请审批</strong><span>处理企业和政府账号开通申请</span><span className="workspace-link-action">进入申请审批</span></Link><Link className="workspace-link role-enterprise" to="/policy-management"><strong>政策管理</strong><span>手工录入或批量导入并发布政策</span><span className="workspace-link-action">进入政策管理</span></Link></div></section>
 }
 
 function PublicLanding({
@@ -114,6 +124,7 @@ function PublicLanding({
           action="进入政府版"
         />
       </div>
+      <Link className="admin-login-entry" to="/login?role=admin">管理员登录</Link>
     </section>
   )
 }
