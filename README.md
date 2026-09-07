@@ -181,7 +181,51 @@ GET/POST       /api/v1/admin/registration-applications...
 GET/POST       /api/v1/admin/policies...
 ```
 
-## 7. 项目当前开发状态
+## 7. 通过 SSH 连接 Windows Server
+
+服务器系统为 Windows，项目目录为 `E:\ai-policy\ai-policy`。推荐在 Mac/Linux 的 `~/.ssh/config` 中配置别名和专用密钥：
+
+```sshconfig
+Host aipolicy-server
+    HostName 服务器 IP 或域名
+    User Administrator
+    IdentityFile ~/.ssh/aipolicy_server
+    IdentitiesOnly yes
+```
+
+如果还没有密钥，可以生成一对专用的 Ed25519 密钥：
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/aipolicy_server
+cat ~/.ssh/aipolicy_server.pub
+```
+
+将公钥加入 Windows Server 管理员账号的授权文件后，测试连接：
+
+```bash
+ssh aipolicy-server
+```
+
+连接成功后，在服务器上进入项目目录并检查 `main` 分支：
+
+```powershell
+cd E:\ai-policy\ai-policy
+& 'C:\Program Files\Git\cmd\git.exe' fetch origin --prune
+& 'C:\Program Files\Git\cmd\git.exe' switch main
+& 'C:\Program Files\Git\cmd\git.exe' pull --ff-only origin main
+& 'C:\Program Files\Git\cmd\git.exe' status --short --branch
+```
+
+Mac/Linux 端与服务器之间传输文件使用 `scp`，Windows 远程路径建议使用正斜杠：
+
+```bash
+scp "/本地文件路径" aipolicy-server:'E:/ai-policy/'
+scp aipolicy-server:'E:/ai-policy/ai-policy/logs/api.log' "/本地下载目录/"
+```
+
+若出现 `Connection refused`，先在服务器控制台检查 OpenSSH SSH Server 是否运行，并确认防火墙允许 TCP 22；若出现 `Permission denied`，检查用户名、密钥和 `administrators_authorized_keys` 授权文件。
+
+## 8. 项目当前开发状态
 
 - 当前阶段：B1.8 阶段功能完善与优化
 - 已完成：S0.1-S0.6、B1.1-B1.7、B18-001 至 B18-011

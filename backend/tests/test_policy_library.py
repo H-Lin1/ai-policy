@@ -16,7 +16,7 @@ from app.modules.policy.service import policy_repository_dependency
 from app.modules.policy.source import SourceValidationError, normalize_source_row, read_csv
 
 FIXTURE_PATH = Path(__file__).parents[1] / "app/modules/policy/fixtures/policies.jsonl"
-SOURCE_PATH = Path("/Users/hlin/Documents/ai policy/backend/datasets/sz_policy_documents.csv")
+SOURCE_PATH = Path(__file__).parents[1] / "datasets/sz_policy_documents.csv"
 USER_ID = "00000000-0000-4000-8000-000000000111"
 
 

@@ -20,7 +20,8 @@ def main() -> int:
     import uuid
 
     namespace = uuid.UUID("c4ddc1a9-1f6a-4d0b-b0c1-0f8eaf6b1f20")
-    with args.output.open("w", encoding="utf-8") as handle:
+    # Pin LF so the deterministic fixture is byte-identical on Windows and Unix.
+    with args.output.open("w", encoding="utf-8", newline="\n") as handle:
         for record in records:
             payload = {
                 "id": str(uuid.uuid5(namespace, f"{record.source_url}:{record.content_sha256}")),

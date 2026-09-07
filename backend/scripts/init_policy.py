@@ -6,9 +6,11 @@ import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from uuid import UUID, uuid5
 
+from alembic.script import ScriptDirectory
 from sqlalchemy import insert, or_, select, text, tuple_
 
 from app.core.config import Settings
@@ -23,7 +25,6 @@ APPLY_POLICY_FIXTURE = "--apply-policy-fixture"
 CONFIRM = "--confirm"
 PREVIOUS_REVISION = "0002_identity_access"
 POLICY_REVISION = "0003_policy_library"
-CURRENT_REVISION = "0005_consultation_workflow"
 POLICY_IMPORT_LOCK_ID = 11_000_003
 FIXTURE_SIZE = 20
 FIXTURE_NAMESPACE = UUID("c4ddc1a9-1f6a-4d0b-b0c1-0f8eaf6b1f20")
@@ -229,19 +230,36 @@ def _schema_state(connection) -> str:
     return "policy_browser_grant_mismatch" if browser_grants else "ok"
 
 
+@lru_cache(maxsize=32)
+def _revision_includes(current_revision: str, required_revision: str) -> bool:
+    """Return whether a known Alembic revision descends from the requirement."""
+
+    try:
+        scripts = ScriptDirectory(str(BACKEND_ROOT / "migrations"))
+        return any(
+            revision.revision == required_revision
+            for revision in scripts.iterate_revisions(current_revision, "base")
+        )
+    except Exception:  # noqa: BLE001 - unknown or branched revisions fail closed.
+        return False
+
+
 def _import_plan(
     connection,
     fixture: Sequence[Mapping[str, object]],
+    *,
+    database_mode: str,
 ) -> tuple[str, tuple[dict[str, object], ...] | None]:
     revisions = tuple(
         connection.execute(text("SELECT version_num FROM alembic_version FOR SHARE")).scalars()
     )
-    allowed_revisions = (
-        (POLICY_REVISION, CURRENT_REVISION)
-        if os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone"
-        else (POLICY_REVISION,)
+    current_revision = str(revisions[0]) if len(revisions) == 1 else ""
+    revision_allowed = (
+        _revision_includes(current_revision, POLICY_REVISION)
+        if database_mode == "standalone"
+        else current_revision == POLICY_REVISION
     )
-    if revisions not in ((revision,) for revision in allowed_revisions):
+    if not revision_allowed:
         return "revision_mismatch", None
     schema_state = _schema_state(connection)
     if schema_state != "ok":
@@ -317,7 +335,11 @@ def apply_policy_fixture(
                 text("SELECT pg_advisory_xact_lock(:lock_id)"),
                 {"lock_id": POLICY_IMPORT_LOCK_ID},
             )
-            state, missing = _import_plan(connection, fixture)
+            state, missing = _import_plan(
+                connection,
+                fixture,
+                database_mode=settings.database_mode,
+            )
             if state != "ok" or missing is None:
                 return ImportResult(False, state)
             phase = "write"

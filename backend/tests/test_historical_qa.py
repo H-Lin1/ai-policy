@@ -14,10 +14,11 @@ from app.modules.historical_qa.source import SourceValidationError, normalize_so
 from app.modules.iam.service import IdentityContext, get_current_identity
 
 FIXTURE_PATH = Path(__file__).parents[1] / "app/modules/historical_qa/fixtures/historical_qa.jsonl"
+DATASETS_ROOT = Path(__file__).parents[1] / "datasets"
 SOURCE_PATHS = (
-    Path("/Users/hlin/Documents/ai policy/backend/datasets/2024-2025/sz_gov_qa_2024-2025_cleaned_model_validated_v2_name_adjudicated.csv"),
-    Path("/Users/hlin/Documents/ai policy/backend/datasets/2025-2026/sz_gov_qa_2025-2026_cleaned_model_validated_v2_name_adjudicated.csv"),
-    Path("/Users/hlin/Documents/ai policy/backend/datasets/2026至今/sz_gov_qa_2026至今_cleaned_model_validated_v2_name_adjudicated.csv"),
+    DATASETS_ROOT / "2024-2025/sz_gov_qa_2024-2025_cleaned_model_validated_v2_name_adjudicated.csv",
+    DATASETS_ROOT / "2025-2026/sz_gov_qa_2025-2026_cleaned_model_validated_v2_name_adjudicated.csv",
+    DATASETS_ROOT / "2026至今/sz_gov_qa_2026至今_cleaned_model_validated_v2_name_adjudicated.csv",
 )
 
 

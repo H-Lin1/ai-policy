@@ -6,9 +6,11 @@ import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from uuid import UUID, uuid5
 
+from alembic.script import ScriptDirectory
 from sqlalchemy import insert, or_, select, text, tuple_
 
 from app.core.config import Settings
@@ -23,7 +25,6 @@ APPLY_QA_FIXTURE = "--apply-qa-fixture"
 CONFIRM = "--confirm"
 PREVIOUS_REVISION = "0003_policy_library"
 QA_REVISION = "0004_historical_qa"
-CURRENT_REVISION = "0005_consultation_workflow"
 QA_IMPORT_LOCK_ID = 11_000_004
 FIXTURE_SIZE = 20
 FIXTURE_NAMESPACE = UUID("a1429f7d-7c96-48cd-a6e4-4b8d29d3a546")
@@ -141,10 +142,34 @@ def _schema_state(connection) -> str:
     return "ok"
 
 
-def _import_plan(connection, fixture: Sequence[Mapping[str, object]]) -> tuple[str, tuple[dict[str, object], ...] | None]:
+@lru_cache(maxsize=32)
+def _revision_includes(current_revision: str, required_revision: str) -> bool:
+    """Return whether a known Alembic revision descends from the requirement."""
+
+    try:
+        scripts = ScriptDirectory(str(BACKEND_ROOT / "migrations"))
+        return any(
+            revision.revision == required_revision
+            for revision in scripts.iterate_revisions(current_revision, "base")
+        )
+    except Exception:  # noqa: BLE001 - unknown or branched revisions fail closed.
+        return False
+
+
+def _import_plan(
+    connection,
+    fixture: Sequence[Mapping[str, object]],
+    *,
+    database_mode: str,
+) -> tuple[str, tuple[dict[str, object], ...] | None]:
     revisions = tuple(connection.execute(text("SELECT version_num FROM alembic_version FOR SHARE")).scalars())
-    allowed_revisions = (QA_REVISION, CURRENT_REVISION) if os.getenv("DATABASE_MODE", "supabase").strip().lower() == "standalone" else (QA_REVISION,)
-    if revisions not in ((revision,) for revision in allowed_revisions): return "revision_mismatch", None
+    current_revision = str(revisions[0]) if len(revisions) == 1 else ""
+    revision_allowed = (
+        _revision_includes(current_revision, QA_REVISION)
+        if database_mode == "standalone"
+        else current_revision == QA_REVISION
+    )
+    if not revision_allowed: return "revision_mismatch", None
     state = _schema_state(connection)
     if state != "ok": return state, None
     regions = tuple(connection.execute(select(Region.__table__).where(Region.__table__.c.code == "sz", Region.__table__.c.is_active.is_(True)).with_for_update()).mappings().all())
@@ -169,7 +194,11 @@ def apply_qa_fixture(settings: Settings, fixture: Sequence[Mapping[str, object]]
     try:
         with engine.begin() as connection:
             connection.execute(text("SELECT pg_advisory_xact_lock(:lock_id)"), {"lock_id": QA_IMPORT_LOCK_ID})
-            state, missing = _import_plan(connection, fixture)
+            state, missing = _import_plan(
+                connection,
+                fixture,
+                database_mode=settings.database_mode,
+            )
             if state != "ok" or missing is None: return ImportResult(False, state)
             phase = "write"
             if missing: connection.execute(insert(HistoricalQa.__table__), list(missing))

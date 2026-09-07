@@ -10,7 +10,7 @@
 | Priority | P0 |
 | Confirmed date | 2026-08-11 |
 | Prerequisite | `UI1.0` and `B1.1` archived; existing Supabase/JWT and IAM scope available |
-| Source sample | `/Users/hlin/Documents/ai policy/backend/datasets/sz_policy_documents.csv`; 1,578 rows, 726 successful government-source records, 722 passing strict hash validation |
+| Source sample | [`backend/datasets/sz_policy_documents.csv`](../backend/datasets/sz_policy_documents.csv); 1,578 rows, 726 successful government-source records, 722 passing strict hash validation |
 | Technical plan | [`TECH-V1-B1-02`](./TECH-V1-B1-02.md) |
 | OpenSpec change | `2026-08-11-establish-policy-library`; `2026-08-11-provision-policy-library-sample` |
 | Feishu | [PRD-V1-B1-02](https://a9ihi0un9c.feishu.cn/docx/K1szdybv8oCKC0x2CfMciBfrneb) |

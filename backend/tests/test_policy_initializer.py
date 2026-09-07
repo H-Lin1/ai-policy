@@ -20,6 +20,14 @@ def postgres_settings() -> Settings:
     )
 
 
+def standalone_settings() -> Settings:
+    return Settings(
+        _env_file=None,
+        database_mode="standalone",
+        database_url="postgresql+psycopg://aipolicy_app@127.0.0.1/aipolicy_new",
+    )
+
+
 class FakeResult:
     def __init__(self, *, scalar=None, values=(), rows=()) -> None:
         self.scalar = scalar
@@ -234,6 +242,26 @@ def test_policy_fixture_import_inserts_once_then_is_exact_noop(monkeypatch) -> N
     assert first == init_policy.ImportResult(True, "ok", init_policy.FIXTURE_SIZE)
     assert second == init_policy.ImportResult(True, "ok", 0)
     assert connection.policies == snapshot
+
+
+def test_policy_fixture_import_accepts_later_standalone_revision(monkeypatch) -> None:
+    connection = FakeConnection()
+    connection.revision = "0008_admin_account_management"
+    monkeypatch.setattr(init_policy, "database_engine", lambda settings: FakeEngine(connection))
+
+    result = init_policy.apply_policy_fixture(standalone_settings(), fixture_records())
+
+    assert result == init_policy.ImportResult(True, "ok", init_policy.FIXTURE_SIZE)
+
+
+def test_policy_fixture_import_rejects_revision_before_policy_schema(monkeypatch) -> None:
+    connection = FakeConnection()
+    connection.revision = init_policy.PREVIOUS_REVISION
+    monkeypatch.setattr(init_policy, "database_engine", lambda settings: FakeEngine(connection))
+
+    result = init_policy.apply_policy_fixture(standalone_settings(), fixture_records())
+
+    assert result == init_policy.ImportResult(False, "revision_mismatch", 0)
     assert engine.begin_count == 2
 
 

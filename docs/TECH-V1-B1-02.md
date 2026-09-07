@@ -18,7 +18,7 @@ Add the first real policy browsing vertical slice while keeping the data boundar
 
 ## 2. Source and Fixture Boundary
 
-The supplied `/Users/hlin/Documents/ai policy/backend/datasets/sz_policy_documents.csv` is treated as an external crawl artifact. It contains 1,578 rows: 726 `success`, 845 `needs_review`, 5 `not_found`, and 2 `no_effective_version`. All successful rows have non-empty content and `.gov.cn` source hosts; four have a mismatched supplied hash and are rejected for review, leaving 722 strict accepted records. B1.2 accepts only `success` rows with non-empty `title`, `source_url`, and `content_text`, and requires `region_code=sz`.
+The supplied [`backend/datasets/sz_policy_documents.csv`](../backend/datasets/sz_policy_documents.csv) is treated as an external crawl artifact. It contains 1,578 rows: 726 `success`, 845 `needs_review`, 5 `not_found`, and 2 `no_effective_version`. All successful rows have non-empty content and `.gov.cn` source hosts; four have a mismatched supplied hash and are rejected for review, leaving 722 strict accepted records. B1.2 accepts only `success` rows with non-empty `title`, `source_url`, and `content_text`, and requires `region_code=sz`.
 
 The local fixture contains 20 deterministically selected accepted rows. The original CSV is never modified. The adapter removes NUL control characters from an input field before validation, normalizes line endings only for the stored text, and verifies/derives the content hash from the resulting UTF-8 text. A source URL is canonicalized only for validation; the official URL shown to users remains the source value.
 

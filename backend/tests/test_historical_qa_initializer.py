@@ -11,6 +11,14 @@ def postgres_settings() -> Settings:
     return Settings(_env_file=None, database_url="postgresql+psycopg://postgres@db.abcdefghijklmnopqrst.supabase.co/postgres", supabase_url="https://abcdefghijklmnopqrst.supabase.co")
 
 
+def standalone_settings() -> Settings:
+    return Settings(
+        _env_file=None,
+        database_mode="standalone",
+        database_url="postgresql+psycopg://aipolicy_app@127.0.0.1/aipolicy_new",
+    )
+
+
 class Result:
     def __init__(self, *, scalar=None, values=(), rows=()): self.scalar, self.values, self.rows = scalar, tuple(values), tuple(rows)
     def scalar_one(self): return self.scalar
@@ -74,6 +82,20 @@ def test_qa_fixture_is_exact_and_import_is_idempotent(monkeypatch):
     assert first == init_qa.ImportResult(True, "ok", 20)
     assert second == init_qa.ImportResult(True, "ok", 0)
     assert connection.rows == snapshot
+
+
+def test_qa_fixture_import_accepts_later_standalone_revision(monkeypatch):
+    connection = Connection(); connection.revision = "0008_admin_account_management"
+    monkeypatch.setattr(init_qa, "database_engine", lambda _: Engine(connection))
+    result = init_qa.apply_qa_fixture(standalone_settings(), fixture_records())
+    assert result == init_qa.ImportResult(True, "ok", init_qa.FIXTURE_SIZE)
+
+
+def test_qa_fixture_import_rejects_revision_before_qa_schema(monkeypatch):
+    connection = Connection(); connection.revision = init_qa.PREVIOUS_REVISION
+    monkeypatch.setattr(init_qa, "database_engine", lambda _: Engine(connection))
+    result = init_qa.apply_qa_fixture(standalone_settings(), fixture_records())
+    assert result == init_qa.ImportResult(False, "revision_mismatch", 0)
 
 
 def test_qa_fixture_conflict_and_failed_insert_do_not_mutate(monkeypatch):

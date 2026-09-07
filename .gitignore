@@ -26,6 +26,8 @@ backend/htmlcov/
 backend/.alembic/
 backend/*.egg-info/
 *.log
+logs/
+*.zip
 .DS_Store
 
 # Local Codex workspace instructions and caches
@@ -37,3 +39,6 @@ indexes/
 *.pth
 *.pt
 *.safetensors
+
+# Local source and processed datasets. Runtime fixtures under app/modules stay tracked.
+/backend/datasets/
